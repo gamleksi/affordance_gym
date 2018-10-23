@@ -15,11 +15,11 @@ def parse_trajectory(trajectory):
 
 class TrajectoryParser(object):
 
-        def __init__(self, save_path, num_joints):
+        def __init__(self, save_path, save_file, num_joints):
 
                 self.save_path = save_path
+                self.save_file = save_file
                 self.num_joints = num_joints
-
                 self.time_steps_raw = []
                 self.positions_raw = []
                 self.velocities_raw = []
@@ -36,4 +36,4 @@ class TrajectoryParser(object):
 
         def save(self):
                 pickle.dump([np.array(self.time_steps_raw), np.array(self.positions_raw), np.array(self.velocities_raw), np.array(self.accelerations_raw)],
-                            open(os.path.join(self.save_path, 'debug_trajectories.pkl'), 'wb'))
+                            open(os.path.join(self.save_path, '{}.pkl'.format(self.save_file)), 'wb'))

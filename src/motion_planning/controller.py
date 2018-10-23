@@ -3,15 +3,13 @@
 import sys
 import rospy
 import moveit_commander as mc
-from moveit_commander import PoseStamped
 import geometry_msgs.msg
 import numpy as np
-import geometry_msgs.msg
 import tf
-import numpy as np
 import random
 import warnings
 warnings.filterwarnings("error")
+
 
 def create_pose(x_p, y_p, z_p, x_o, y_o, z_o, w_o):
         """Creates a pose using quaternions
@@ -46,6 +44,7 @@ def create_pose(x_p, y_p, z_p, x_o, y_o, z_o, w_o):
         pose_target.orientation.w = w_o
         return pose_target
 
+
 def create_pose_euler(x_p, y_p, z_p, roll_rad, pitch_rad, yaw_rad):
         """Creates a pose using euler angles
 
@@ -67,14 +66,21 @@ def create_pose_euler(x_p, y_p, z_p, roll_rad, pitch_rad, yaw_rad):
         :returns: Pose
         :rtype: PoseStamped
         """
-        quaternion = tf.transformations.quaternion_from_euler(roll_rad, pitch_rad, yaw_rad)
-        return create_pose(x_p, y_p, z_p, quaternion[0], quaternion[1], quaternion[2], quaternion[3])
+        quaternion = tf.transformations.quaternion_from_euler(
+                        roll_rad, pitch_rad, yaw_rad)
+        return create_pose(
+                        x_p, y_p, z_p,
+                        quaternion[0], quaternion[1],
+                        quaternion[2], quaternion[3])
+
 
 class RobotWrapper(object):
 
-        def __init__(self, arm_group, reset_joint_values, gripper_group=None, gripper_open_values=[0.04, 0.04]):
+        def __init__(
+                        self, arm_group, reset_joint_values,
+                        gripper_group=None, gripper_open_values=[0.04, 0.04]
+                        ):
                 self.robot = mc.RobotCommander()
-
                 self.reset_joint_values = reset_joint_values
                 self.arm = self.init_group(arm_group)
 
@@ -88,6 +94,7 @@ class RobotWrapper(object):
                 self.reset_position()
 
         def init_group(self, name):
+
                 arm = mc.MoveGroupCommander(name)
                 arm.set_planner_id("ESTkConfigDefault")
                 arm.allow_replanning(False)
@@ -101,7 +108,8 @@ class RobotWrapper(object):
         def gripper_open(self):
 
                 if self.gripper is not None:
-                        self.gripper.set_joint_value_target(self.gripper_open_values)
+                        self.gripper.set_joint_value_target(
+                                        self.gripper_open_values)
                         self.gripper.plan()
                         self.gripper.go(wait=True)
                         rospy.sleep(1)
@@ -122,7 +130,8 @@ class RobotWrapper(object):
                 rospy.sleep(1)
                 self.gripper_close()
 
-        def plan_path_global(self, x_p, y_p, z_p, roll_rad, pitch_rad, yaw_rad):
+        def plan_path_global(
+                        self, x_p, y_p, z_p, roll_rad, pitch_rad, yaw_rad):
 
                 self.arm.clear_pose_targets()
 
@@ -225,8 +234,7 @@ class RobotScene(object):
                 return self.robot.plan_path_global(x_p, y_p, z_p, roll_rad, pitch_rad, yaw_rad)
 
         def do_plan(self, plan):
-                succeed =  self.robot.arm.execute(plan)
-                print(self.robot.arm.get_current_pose)
+                succeed = self.robot.arm.execute(plan)
                 return succeed
 
 from moveit_msgs.msg import RobotTrajectory, genpy
@@ -234,15 +242,18 @@ from moveit_msgs.msg import _RobotTrajectory
 
 class RobotTrajectoryHandler(object):
 
-        def __init__(self, duration, joint_names = ['lwr_a1_joint', 'lwr_a2_joint', 'lwr_e1_joint', 'lwr_a3_joint', 'lwr_a4_joint', 'lwr_a5_joint', 'lwr_a6_joint']):
+        def __init__(self, duration, initial_joints, joint_names = ['lwr_a1_joint', 'lwr_a2_joint', 'lwr_e1_joint', 'lwr_a3_joint', 'lwr_a4_joint', 'lwr_a5_joint', 'lwr_a6_joint']):
                 self.duration = duration
                 self.joint_names = joint_names
                 self.num_joints = len(joint_names)
+                self.initial_joints = np.array([initial_joints])
 
         def build_message(self, trajectory):
                 trajectory_msg = RobotTrajectory()
                 trajectory_msg.joint_trajectory.joint_names = self.joint_names
-                num_steps = len(trajectory)
+
+                trajectory = np.concatenate((self.initial_joints, trajectory))
+                num_steps = len(trajectory + 1)
 
                 time_steps = np.linspace(0, self.duration, num_steps)
 
