@@ -288,7 +288,7 @@ parser.add_argument('--num-actions', default=20, type=int, help='')
 parser.add_argument('--latent-dim', default=5, type=int, help='')
 parser.add_argument(
         '--duration', default=4,
-        type=int, help='Duratoin of generated trajectory')
+        type=int, help='Duration of generated trajectory')
 parser.add_argument(
         '--trajectory-model',
         default='simple_full_b-5',
@@ -333,7 +333,6 @@ def main(args):
     num_joints = args.num_joints
     num_actions = args.num_actions
     duration = args.duration
-    # robot_id = 1
 
     trajectory_model = TrajectoryDemonstrator(
             trajectory_model, latent_dim,

@@ -118,3 +118,4 @@ hardcopy.*
 
 # folders
 rl_log/*
+.idea/*

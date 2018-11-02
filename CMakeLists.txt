@@ -165,6 +165,8 @@ include_directories(
 ## in contrast to setup.py, you can choose the destination
 install(PROGRAMS
    scripts/run.py
+   scripts/rl_run.py
+   scripts/generate_trajectories.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

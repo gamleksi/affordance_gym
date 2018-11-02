@@ -1,24 +1,22 @@
 #! /usr/bin/env python
 from behavioural_vae.utils import smooth_trajectory, MIN_ANGLE, MAX_ANGLE
-from motion_planning.controller import RobotScene, RobotWrapper
-from motion_planning.controller import RobotTrajectoryHandler
 from motion_planning.trajectory_parser import parse_trajectory
-from motion_planning.utils import KUKA_RESET_JOINTS, KUKA_X_LIM
-from motion_planning.utils import KUKA_Y_LIM, KUKA_z_LIM
-
-
+from motion_planning.simulation_interface import CommunicationHandler
 from behavioural_vae.ros_monitor import ROSTrajectoryVAE
+
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-ROOT_PATH = '/home/aleksi/hacks/behavioural_ws/behaviroural_vae/behavioural_vae'
+MODEL_ROOT_PATH = '/home/aleksi/hacks/behavioural_ws/behaviroural_vae/behavioural_vae'
 
 
 class Visualizer(object):
 
-    def __init__(self, sample_root):
-        self.sample_root = sample_root
+    def __init__(self, sample_root, model_name):
+        self.sample_path = os.path.join(sample_root, model_name)
+        if not(os.path.isdir(self.sample_path)):
+            os.mkdir(self.sample_path)
 
     def generate_image(self, original, reconstructed, file_name=None):
         # w = original.shape[0]
@@ -36,129 +34,156 @@ class Visualizer(object):
         if file_name is None:
             plt.show()
         else:
-            plt.savefig(os.path.join('/home/aleksi/hacks/behavioural_ws/result_samples', '{}.png'.format(file_name)))
+            plt.savefig(os.path.join(self.sample_path, '{}.png'.format(file_name)))
             plt.close()
 
 
-class ROSMonitor(object):
+class TrajectoryEnv(object):
 
     def __init__(
             self, model_name,
-            latent_dim, arm_group='full_lwr',
+            latent_dim, env_interface,
             num_joints=7, num_actions=20,
-            model_root_path=ROOT_PATH, trajectory_duration=4
+            model_root_path=MODEL_ROOT_PATH, trajectory_duration=4
             ):
 
-        robot, env, model, handler = self.build_environment(
-                 model_name, latent_dim, arm_group, num_joints,
-                 num_actions, model_root_path, trajectory_duration
-                 )
-        self.robot = robot
-        self.env = env
-        self.model = model
-        self.handler = handler
-
-    def build_environment(
-            self, model_name, latent_dim,
-            arm_group, num_joints, num_actions,
-            model_root_path, trajectory_duration):
-        robot = RobotWrapper(arm_group, KUKA_RESET_JOINTS)
-        env = RobotScene(robot, KUKA_X_LIM, KUKA_Y_LIM, KUKA_z_LIM)
-        model = ROSTrajectoryVAE(
+        self.env_interface = env_interface
+        self.behaviour_model = ROSTrajectoryVAE(
                 model_name, latent_dim, num_actions,
                 num_joints=num_joints, root_path=model_root_path
                 )
-        handler = RobotTrajectoryHandler(trajectory_duration, KUKA_RESET_JOINTS)
-        return robot, env, model, handler
+
+        self.msg_handler = CommunicationHandler(trajectory_duration)
+        self.num_actions = num_actions
+        self.num_joints = num_joints
+
+    def reset_environment(self):
+
+        # Reset Simulation
+        # Clear Controller target
+
+        self.env_interface.reset()
 
     def process_plan(self, plan):
-        # return smoothed trajectories
+
+        # Smooth plan to N steps
+        # Normalize positions of the smoothed trajectory
+        # Returns the normalized trajectory positions which can be feed to a behavioural model
+
         time_steps_raw, positions_raw, _, _ = parse_trajectory(plan)
-        _, positions, _, _ = smooth_trajectory(time_steps_raw, positions_raw, NUM_ACTIONS, NUM_JOINTS)
+        _, positions, _, _ = smooth_trajectory(time_steps_raw, positions_raw, self.num_actions, self.num_joints)
         positions = (positions - MIN_ANGLE) / (MAX_ANGLE - MIN_ANGLE)
+
         return np.array(positions)
 
     def unnormalize_positions(self, positions):
+
         return (MAX_ANGLE - MIN_ANGLE) * positions + MIN_ANGLE
 
     def smooth_plan(self, plan):
+
+        # Smooth a moveit generated plan to N step plan
+        # Return new plan with N step
+
         positions = self.process_plan(plan)
-        smoothed_plan = self.handler.build_message(self.unnormalize_positions(positions))
+        smoothed_plan = self.msg_handler.build_message(self.unnormalize_positions(positions))
         return smoothed_plan, positions
 
-    # Behavioural model trajectories
 
     def get_imitation(self, plan):
+        # Gets a moveit generated plan
+        # Parses normalized smoothed positions of the plan
+        # a behavioural vae returns a imitation of the smoothed plan
+        # Returns normalized raw trajectory
+
         positions = self.process_plan(plan)
-        result = self.model.get_result(positions)
+        result = self.behaviour_model.get_result(positions)
         return result
 
     def imitate_plan(self, plan):
+        # Gets a moveit generated plan
+        # Obtain an imitation of the position trajectory
+        # does the imitation
+
         result = self.get_imitation(plan)
-        result_plan = self.handler.build_message(self.unnormalize_positions(result))
-        self.robot.reset_position()
-        self.env.do_plan(result_plan)
-        return result, self.env.robot.arm.get_current_joint_values()
+        result_plan = self.msg_handler.build_message(self.unnormalize_positions(result))
+        self.env_interface.do_plan(result_plan)
+
+        return result, self.env_interface.current_joint_values()
 
     def get_latent_imitation(self, latent):
-        result = self.model.decode(latent)
-        return result
+        # Returns a normalized position trajectory of a given latent
+        return self.behaviour_model.decode(latent)
 
     def do_latent_imitation(self, latent):
-        result = self.get_latent_imitation(latent)
-        result_plan = self.handler.build_message(self.unnormalize_positions(result))
-        self.robot.reset_position()
-        self.env.do_plan(result_plan)
-        return result, self.env.robot.arm.get_current_pose()
+        # Executes a trajectory based on a given latent
 
-    # MOVEIT Random Trajectories
+        normalized_positions = self.get_latent_imitation(latent)
+        plan = self.msg_handler.build_message(self.unnormalize_positions(normalized_positions))
+        self.env_interface.do_plan(plan)
+        return normalized_positions, self.env_interface.get_current_pose()
 
     def generate_random_plan(self):
-        # generate random smoothed trajectory
-        # return smoothed trajectory and plan and end pose
-        self.env.reset_position()
-        plan = self.env.random_plan()
+        # Generates a random smoothed trajectory
+        # returns a smoothed and normalized position trajectory, and
+        # the smoothed plan
+
+        plan = self.env_interface.random_plan()
         positions = self.process_plan(plan)
-        smoothed_plan = self.handler.build_message(self.unnormalize_positions(positions))
+        smoothed_plan = self.msg_handler.build_message(self.unnormalize_positions(positions))
         return positions, smoothed_plan
 
     def do_random_plan(self):
-        # Act random smoothed trajectory
-        # return smoothed trajectory, plan and end pose
+        # Executes a random plan
+
         positions, smoothed_plan = self.generate_random_plan()
-        self.env.do_plan(smoothed_plan)
-        end_model_pose = self.env.robot.arm.get_current_joint_values()
-        self.env.reset_position()
+        self.env_interface.do_plan(smoothed_plan)
+        end_model_pose = self.env_interface.current_joint_values()
+
         return positions, smoothed_plan, end_model_pose
+
+    def do_random_raw_plan(self):
+        # Executes a random plan
+
+        plan = self.env_interface.random_plan()
+        self.env_interface.do_plan(plan)
+        end_model_pose = self.env_interface.current_joint_values()
+
+        return end_model_pose
 
 
 VIS_ROOT = '/home/aleksi/hacks/behavioural_ws/result_samples'
 MODEL_ROOT = '/home/aleksi/hacks/behavioural_ws/behaviroural_vae/behavioural_vae'
 
-class TrajectoryDemonstrator(ROSMonitor):
+class TrajectoryDemonstrator(TrajectoryEnv):
 
-    def __init__(
-            self, model_name, latent_dim, viz_root=VIS_ROOT,
-            arm_group='full_lwr', num_joints=7, num_actions=20,
-            model_root_path=MODEL_ROOT, trajectory_duration=4):
+    def __init__(self, model_name, latent_dim, env_interface, num_joints,
+                 num_actions, trajectory_duration, model_root_path=MODEL_ROOT, vis_root=VIS_ROOT):
 
         super(TrajectoryDemonstrator, self).__init__(
-            model_name, latent_dim, arm_group,
-            num_joints, num_actions, model_root_path, trajectory_duration
+            model_name, latent_dim,
+            env_interface, num_joints, num_actions,
+            model_root_path, trajectory_duration
             )
 
-        self.visualizer = Visualizer(viz_root)
+        self.visualizer = Visualizer(vis_root, model_name)
         self.latent_dim = latent_dim
 
     def log_imitation(self, file_name=None):
+
+        self.reset_environment()
         positions, smoothed_plan = self.generate_random_plan()
         result = self.get_imitation(smoothed_plan)
         self.visualizer.generate_image(positions, result, file_name=file_name)
 
     def demonstrate(self, visualize=False):
 
+        self.reset_environment()
+
         # Random smoothed trajectory
         positions, smoothed_plan, end_model_pose = self.do_random_plan()
+
+        self.reset_environment()
 
         # Generated trajectory
         result, end_gen_pose = self.imitate_plan(smoothed_plan)
@@ -177,16 +202,17 @@ class TrajectoryDemonstrator(ROSMonitor):
             loss = np.linalg.norm(np.array(end_model_pose) - np.array(end_gen_pose))
             print(loss)
             losses[i] = loss
+
         print('AVG LOSS:', np.mean(losses))
 
     def generate_multiple_images(self, num_samples):
 
         for i in range(num_samples):
-            self.log_imitation('sample_{i}')
+            self.log_imitation('sample_{}'.format(i))
 
     def generate_random_imitations(self, num_samples):
 
         for i in range(num_samples):
+            self.reset_environment()
             random_latent = np.random.randn(self.latent_dim)
             self.do_latent_imitation(random_latent)
-
