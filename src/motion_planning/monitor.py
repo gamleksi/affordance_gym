@@ -13,10 +13,11 @@ MODEL_ROOT_PATH = '/home/aleksi/hacks/behavioural_ws/behaviroural_vae/behavioura
 
 class Visualizer(object):
 
-    def __init__(self, sample_root, model_name):
-        self.sample_path = os.path.join(sample_root, model_name)
-        if not(os.path.isdir(self.sample_path)):
-            os.mkdir(self.sample_path)
+    def __init__(self, sample_path):
+
+        self.sample_path = sample_path
+        if not(os.path.exists(self.sample_path)):
+            os.makedirs(self.sample_path)
 
     def generate_image(self, original, reconstructed, file_name=None):
         # w = original.shape[0]
@@ -122,7 +123,7 @@ class TrajectoryEnv(object):
         normalized_positions = self.get_latent_imitation(latent)
         plan = self.msg_handler.build_message(self.unnormalize_positions(normalized_positions))
         self.env_interface.do_plan(plan)
-        return normalized_positions, self.env_interface.get_current_pose()
+        return normalized_positions, self.env_interface.current_pose()
 
     def generate_random_plan(self):
         # Generates a random smoothed trajectory
@@ -159,7 +160,7 @@ MODEL_ROOT = '/home/aleksi/hacks/behavioural_ws/behaviroural_vae/behavioural_vae
 class TrajectoryDemonstrator(TrajectoryEnv):
 
     def __init__(self, model_name, latent_dim, env_interface, num_joints,
-                 num_actions, trajectory_duration, model_root_path=MODEL_ROOT, vis_root=VIS_ROOT):
+                 num_actions, trajectory_duration, model_root_path=MODEL_ROOT):
 
         super(TrajectoryDemonstrator, self).__init__(
             model_name, latent_dim,
@@ -167,7 +168,7 @@ class TrajectoryDemonstrator(TrajectoryEnv):
             model_root_path, trajectory_duration
             )
 
-        self.visualizer = Visualizer(vis_root, model_name)
+        self.visualizer = Visualizer(os.path.join(model_root_path, 'log', model_name, 'demos'))
         self.latent_dim = latent_dim
 
     def log_imitation(self, file_name=None):
@@ -182,11 +183,13 @@ class TrajectoryDemonstrator(TrajectoryEnv):
         self.reset_environment()
 
         # Random smoothed trajectory
+        print("Random smoothed trajectory")
         positions, smoothed_plan, end_model_pose = self.do_random_plan()
 
         self.reset_environment()
 
         # Generated trajectory
+        print("Imitation")
         result, end_gen_pose = self.imitate_plan(smoothed_plan)
 
         if visualize:
@@ -199,7 +202,7 @@ class TrajectoryDemonstrator(TrajectoryEnv):
         losses = np.zeros(num_samples)
 
         for i in range(num_samples):
-            end_model_pose, end_gen_pose = self.demonstrate(visualize=False)
+            end_model_pose, end_gen_pose = self.demonstrate()
             loss = np.linalg.norm(np.array(end_model_pose) - np.array(end_gen_pose))
             print(loss)
             losses[i] = loss
@@ -214,6 +217,7 @@ class TrajectoryDemonstrator(TrajectoryEnv):
     def generate_random_imitations(self, num_samples):
 
         for i in range(num_samples):
+            print("Random imitation {}".format(i))
             self.reset_environment()
             random_latent = np.random.randn(self.latent_dim)
             self.do_latent_imitation(random_latent)

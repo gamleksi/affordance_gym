@@ -98,7 +98,7 @@ class SimulationInterface(object):
 
     def print_current_joint_states(self):
         print('Current Joint Values:')
-        print(self.arm_planner.arm.get_current_joint_values())
+        print(self.arm_planner.get_current_joint_values())
 
     def random_end_effector_pose(self):
         x_p = random.uniform(GRIPPER_POSITION_LIMITS[0][0], GRIPPER_POSITION_LIMITS[0][1])
