@@ -53,7 +53,7 @@ class TrajectoryEnv(object):
                 num_joints=num_joints, root_path=model_root_path
                 )
 
-        self.msg_handler = CommunicationHandler(trajectory_duration)
+        self.msg_handler = CommunicationHandler(trajectory_duration, self.env_interface.current_joint_values(), self.env_interface.joint_names())
         self.num_actions = num_actions
         self.num_joints = num_joints
 
@@ -86,7 +86,8 @@ class TrajectoryEnv(object):
         # Return new plan with N step
 
         positions = self.process_plan(plan)
-        smoothed_plan = self.msg_handler.build_message(self.unnormalize_positions(positions))
+        smoothed_plan = self.msg_handler.build_message(self.unnormalize_positions(positions),
+                                                       )
         return smoothed_plan, positions
 
 

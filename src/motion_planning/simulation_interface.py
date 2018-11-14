@@ -5,8 +5,8 @@ import rospy
 import moveit_commander as mc
 import numpy as np
 import random
-from motion_planning.utils import KUKA_Y_LIM, KUKA_z_LIM,  KUKA_X_LIM, KUKA_RESET_JOINTS
-from motion_planning.utils import KUKA_JOINTS, create_pose_euler
+from motion_planning.utils import LUMI_Y_LIM, LUMI_X_LIM, LUMI_Z_LIM
+from motion_planning.utils import create_pose_euler
 from std_srvs.srv import Empty
 
 # Adding obstacles:
@@ -32,13 +32,13 @@ from std_srvs.srv import Empty
 #        self.scene.remove_world_object(name)
 
 
-GRIPPER_POSITION_LIMITS = (KUKA_X_LIM, KUKA_Y_LIM, KUKA_z_LIM)
+GRIPPER_POSITION_LIMITS = (LUMI_Y_LIM, LUMI_X_LIM, LUMI_Z_LIM)
 GRIPPER_OPEN_VALUES = (0.04, 0.04)
 
 class SimulationInterface(object):
 
     def __init__(self, arm_name, gripper_name=None, gripper_open_values=GRIPPER_OPEN_VALUES,
-                 gripper_position_limit=GRIPPER_POSITION_LIMITS, reset_joint_values=KUKA_RESET_JOINTS):
+                 gripper_position_limit=GRIPPER_POSITION_LIMITS):
 
         # Initialize Moveit Node interface
         mc.roscpp_initialize(sys.argv)
@@ -52,7 +52,6 @@ class SimulationInterface(object):
         else:
             self.gripper_planner = None
 
-        self.reset_joint_values = reset_joint_values
         self.gripper_position_limit = gripper_position_limit
 
 
@@ -77,6 +76,9 @@ class SimulationInterface(object):
 
     def current_joint_values(self):
         return self.arm_planner.get_current_joint_values()
+
+    def joint_names(self):
+        return self.arm_planner.get_joints()
 
     def current_pose(self):
         return self.arm_planner.get_current_pose()
@@ -154,7 +156,7 @@ class SimulationInterface(object):
     def reset(self):
 
         self.arm_planner.clear_pose_targets()
-        reset = rospy.ServiceProxy('lwr_mujoco/reset', Empty)
+        reset = rospy.ServiceProxy('lumi_mujoco/reset', Empty)
         try:
             reset()
         except rospy.ServiceException as exc:
@@ -168,7 +170,7 @@ from moveit_msgs.msg import _RobotTrajectory
 
 class CommunicationHandler(object):
 
-    def __init__(self, duration, initial_joints=KUKA_RESET_JOINTS, joint_names=KUKA_JOINTS):
+    def __init__(self, duration, initial_joints, joint_names):
         self.duration = duration
         self.joint_names = joint_names
         self.num_joints = len(joint_names)
@@ -203,5 +205,5 @@ class CommunicationHandler(object):
         return [point.positions for point in plan.joint_trajectory.points]
 
 if __name__ == '__main__':
-    planner = SimulationInterface(arm_name='arm')
+    planner = SimulationInterface(arm_name='lumi_arm')
 

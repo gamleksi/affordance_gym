@@ -12,10 +12,9 @@ NUM_ACTIONS = args.num_actions
 DURATION = args.duration
 
 if __name__ == '__main__':
-    simulation_interface = SimulationInterface('arm')
+    simulation_interface = SimulationInterface('lumi_arm')
     demo = TrajectoryDemonstrator(MODEL_NAME, LATENT_DIM, simulation_interface, NUM_JOINTS,
                                   NUM_ACTIONS, DURATION)
-
 #    demo.generate_multiple_images(40)
 #    print("Random_plan 1")
 #    demo.reset_environment()
@@ -28,13 +27,13 @@ if __name__ == '__main__':
 #    print("Random_plan 4")
 #    demo.reset_environment()
 #    demo.do_random_plan()
-
-
+#
+#
 #    print("Demonstrattion 1")
 #    demo.demonstrate()
 #    print("Demonstrattion 2")
 #    demo.demonstrate()
 #    print("Demonstrattion 3")
 #    demo.demonstrate()
-#    print("Demonstrattion 4")
-#    demo.demonstrate()
+    #print("Demonstrattion 4")
+    #demo.demonstrate()

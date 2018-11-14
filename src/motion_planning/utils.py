@@ -90,5 +90,8 @@ def parse_arguments():
 KUKA_X_LIM = [0.46, 0.76]
 KUKA_Y_LIM = [-0.4, 0.4]
 KUKA_z_LIM = [.4, .4]
-KUKA_RESET_JOINTS = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-KUKA_JOINTS = ['joint_1', 'joint_2', 'joint_3', 'joint_4', 'joint_5', 'joint_6', 'joint_7']
+
+
+LUMI_X_LIM = [0.3, 0.62]
+LUMI_Y_LIM = [-0.4, 0.4]
+LUMI_Z_LIM = [.1, .1]
