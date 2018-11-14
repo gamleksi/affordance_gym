@@ -3,6 +3,7 @@ from motion_planning.simulation_interface import SimulationInterface
 from motion_planning.trajectory_parser import TrajectoryParser
 import argparse
 import os
+import rospy
 
 
 parser = argparse.ArgumentParser(description='Trajectory Generator Arguments')
@@ -26,12 +27,12 @@ if __name__ == '__main__':
     simulation_interface.reset()
     trajectory_saver = TrajectoryParser(SAVE_PATH, 'trajectories', NUM_JOINTS)
 
+    rospy.on_shutdown(trajectory_saver.save)
+
     for i in range(NUM_SAMPLES):
         plan = simulation_interface.random_plan()
         trajectory_saver.add_trajectory(plan)
 
-        if i % 100 == 0:
-            trajectory_saver.save()
+        if i % 5000 == 0:
+            trajectory_saver.save('trajectories_{}'.format(i))
             print('Generated and Saved: {}'.format(i))
-
-    trajectory_saver.save()

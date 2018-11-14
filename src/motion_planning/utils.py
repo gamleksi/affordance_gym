@@ -92,6 +92,6 @@ KUKA_Y_LIM = [-0.4, 0.4]
 KUKA_z_LIM = [.4, .4]
 
 
-LUMI_X_LIM = [0.3, 0.62]
+LUMI_X_LIM = [0.3, 0.55]
 LUMI_Y_LIM = [-0.4, 0.4]
 LUMI_Z_LIM = [.1, .1]

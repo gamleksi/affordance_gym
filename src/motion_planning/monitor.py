@@ -135,7 +135,7 @@ class TrajectoryEnv(object):
         return positions, smoothed_plan
 
     def do_random_plan(self):
-        # Executes a random plan
+        # Executes a random smoothed plan
 
         positions, smoothed_plan = self.generate_random_plan()
         self.env_interface.do_plan(smoothed_plan)

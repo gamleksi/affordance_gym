@@ -32,12 +32,12 @@ class TrajectoryParser(object):
     def add_trajectory(self, trajectory):
 
         time_steps_raw, positions_raw, velocities_raw, accelerations_raw = parse_trajectory(trajectory)
-
         self.time_steps_raw.append(time_steps_raw)
         self.positions_raw.append(positions_raw)
         self.velocities_raw.append(velocities_raw)
         self.accelerations_raw.append(accelerations_raw)
 
     def save(self):
-        pickle.dump([np.array(self.time_steps_raw), np.array(self.positions_raw), np.array(self.velocities_raw), np.array(self.accelerations_raw)],
-                    open(os.path.join(self.save_path, '{}.pkl'.format(self.save_file)), 'wb'))
+        f = open(os.path.join(self.save_path, '{}.pkl'.format(self.save_file)), 'wb')
+        pickle.dump([np.array(self.time_steps_raw), np.array(self.positions_raw), np.array(self.velocities_raw), np.array(self.accelerations_raw)], f)
+        f.close()
