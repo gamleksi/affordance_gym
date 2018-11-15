@@ -32,7 +32,7 @@ from std_srvs.srv import Empty
 #        self.scene.remove_world_object(name)
 
 
-GRIPPER_POSITION_LIMITS = (LUMI_Y_LIM, LUMI_X_LIM, LUMI_Z_LIM)
+GRIPPER_POSITION_LIMITS = (LUMI_X_LIM, LUMI_Y_LIM, LUMI_Z_LIM)
 GRIPPER_OPEN_VALUES = (0.04, 0.04)
 
 class SimulationInterface(object):
@@ -125,7 +125,8 @@ class SimulationInterface(object):
 
         return plan
 
-    def plan_end_effector_to_position(self, x_p=0.5, y_p=0, z_p=0.5, roll_rad=np.pi/2, pitch_rad=np.pi/4, yaw_rad=np.pi/2):
+# For grasping roll_rad=np.pi/2, pitch_rad=np.pi/4, yaw_rad=np.pi/2):
+    def plan_end_effector_to_position(self, x_p=0.5, y_p=0, z_p=0.5,  roll_rad=0, pitch_rad=np.pi, yaw_rad=np.pi):
 
         self.arm_planner.clear_pose_targets()
         pose = create_pose_euler(x_p, y_p, z_p, roll_rad, pitch_rad, yaw_rad)
@@ -138,7 +139,7 @@ class SimulationInterface(object):
         return plan
 
     def move_arm_to_position(
-            self, x_p=0.5, y_p=0, z_p=0.5, roll_rad=np.pi/2, pitch_rad=np.pi/4, yaw_rad=np.pi/2):
+            self, x_p=0.5, y_p=0, z_p=0.5,  roll_rad=0, pitch_rad=np.pi, yaw_rad=np.pi):
         plan = self.plan_end_effector_to_position(
                 x_p, y_p, z_p, roll_rad, pitch_rad, yaw_rad)
 
@@ -161,6 +162,8 @@ class SimulationInterface(object):
             reset()
         except rospy.ServiceException as exc:
             print("Reset did not work:" + str(exc))
+
+        rospy.sleep(1.0)
 #        self.gripper_close()
 
 

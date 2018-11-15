@@ -195,14 +195,15 @@ class TrajectoryDemonstrator(TrajectoryEnv):
         if visualize:
             self.visualizer.generate_image(positions, result)
 
-        return end_model_pose, end_gen_pose
+        return end_model_pose, end_gen_pose, positions, result
+
 
     def multiple_demonstrations(self, num_samples):
 
         losses = np.zeros(num_samples)
 
         for i in range(num_samples):
-            end_model_pose, end_gen_pose = self.demonstrate()
+            end_model_pose, end_gen_pose, _, _ = self.demonstrate()
             loss = np.linalg.norm(np.array(end_model_pose) - np.array(end_gen_pose))
             print(loss)
             losses[i] = loss
