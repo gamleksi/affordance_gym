@@ -16,8 +16,6 @@ def generate_image(original, reconstructed, num_actions):
     plt.show()
 
 
-
-
 parser = argparse.ArgumentParser(description='Behavioral VAE demonstration')
 parser.add_argument('--vae-name', default='simple_full_b-5', type=str, help='')
 parser.add_argument('--simple-model', default='simple_full_b-5', type=str, help='')

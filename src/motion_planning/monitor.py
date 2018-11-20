@@ -157,6 +157,7 @@ class TrajectoryEnv(object):
 VIS_ROOT = '/home/aleksi/hacks/behavioural_ws/result_samples'
 MODEL_ROOT = '/home/aleksi/hacks/behavioural_ws/behaviroural_vae/behavioural_vae'
 
+
 class TrajectoryDemonstrator(TrajectoryEnv):
 
     def __init__(self, model_name, latent_dim, env_interface, num_joints,
