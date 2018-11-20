@@ -2,57 +2,21 @@
 from behavioural_vae.utils import smooth_trajectory, MIN_ANGLE, MAX_ANGLE
 from motion_planning.trajectory_parser import parse_trajectory
 from motion_planning.simulation_interface import CommunicationHandler
-from behavioural_vae.ros_monitor import ROSTrajectoryVAE
 
-import matplotlib.pyplot as plt
 import numpy as np
-import os
 
 MODEL_ROOT_PATH = '/home/aleksi/hacks/behavioural_ws/behaviroural_vae/behavioural_vae'
-
-
-class Visualizer(object):
-
-    def __init__(self, sample_path):
-
-        self.sample_path = sample_path
-        if not(os.path.exists(self.sample_path)):
-            os.makedirs(self.sample_path)
-
-    def generate_image(self, original, reconstructed, file_name=None):
-        # w = original.shape[0]
-        # h = original.shape[1]
-        fig = plt.figure(figsize=(30, 30))
-        columns = 4
-        rows = 1
-        images = (original, reconstructed, np.abs(
-            original - reconstructed))
-        for i in range(1, 4):
-            fig.add_subplot(rows, columns, i)
-            im = plt.imshow(images[i-1],
-                    cmap='gray', vmin=0, vmax=1)
-        plt.colorbar(im, fig.add_subplot(rows, columns, 4))
-        if file_name is None:
-            plt.show()
-        else:
-            plt.savefig(os.path.join(self.sample_path, '{}.png'.format(file_name)))
-            plt.close()
 
 
 class TrajectoryEnv(object):
 
     def __init__(
-            self, model_name,
-            latent_dim, env_interface,
-            num_joints=7, num_actions=20,
-            model_root_path=MODEL_ROOT_PATH, trajectory_duration=4
+            self, behaviour_model, env_interface, num_actions, num_joints=7,
+            trajectory_duration=4
             ):
 
         self.env_interface = env_interface
-        self.behaviour_model = ROSTrajectoryVAE(
-                model_name, latent_dim, num_actions,
-                num_joints=num_joints, root_path=model_root_path
-                )
+        self.behaviour_model = behaviour_model
 
         self.msg_handler = CommunicationHandler(trajectory_duration, self.env_interface.current_joint_values(), self.env_interface.joint_names())
         self.num_actions = num_actions
@@ -87,8 +51,7 @@ class TrajectoryEnv(object):
         # Return new plan with N step
 
         positions = self.process_plan(plan)
-        smoothed_plan = self.msg_handler.build_message(self.unnormalize_positions(positions),
-                                                       )
+        smoothed_plan = self.msg_handler.build_message(self.unnormalize_positions(positions))
         return smoothed_plan, positions
 
 
@@ -154,22 +117,17 @@ class TrajectoryEnv(object):
         return end_model_pose
 
 
-VIS_ROOT = '/home/aleksi/hacks/behavioural_ws/result_samples'
-MODEL_ROOT = '/home/aleksi/hacks/behavioural_ws/behaviroural_vae/behavioural_vae'
-
-
 class TrajectoryDemonstrator(TrajectoryEnv):
 
-    def __init__(self, model_name, latent_dim, env_interface, num_joints,
-                 num_actions, trajectory_duration, model_root_path=MODEL_ROOT):
+    def __init__(self, behaviour_model, latent_dim, env_interface, num_joints,
+                 num_actions, trajectory_duration, visualizer):
 
         super(TrajectoryDemonstrator, self).__init__(
-            model_name, latent_dim,
-            env_interface, num_joints, num_actions,
-            model_root_path, trajectory_duration
+            behaviour_model, env_interface, num_actions, num_joints=num_joints,
+            trajectory_duration=trajectory_duration
             )
 
-        self.visualizer = Visualizer(os.path.join(model_root_path, 'log', model_name, 'demos'))
+        self.visualizer = visualizer # Visualizer(os.path.join(model_root_path, 'log', model_name, 'demos'))
         self.latent_dim = latent_dim
 
     def log_imitation(self, file_name=None):
@@ -177,7 +135,7 @@ class TrajectoryDemonstrator(TrajectoryEnv):
         self.reset_environment()
         positions, smoothed_plan = self.generate_random_plan()
         result = self.get_imitation(smoothed_plan)
-        self.visualizer.generate_image(positions, result, file_name=file_name)
+        self.visualizer.plot_trajectory(positions, result, file_name=file_name, folder='moveit_demos')
 
     def demonstrate(self, visualize=False):
 
@@ -194,7 +152,7 @@ class TrajectoryDemonstrator(TrajectoryEnv):
         result, end_gen_pose = self.imitate_plan(smoothed_plan)
 
         if visualize:
-            self.visualizer.generate_image(positions, result)
+            self.visualizer.plot_trajectory(positions, result)
 
         return end_model_pose, end_gen_pose, positions, result
 

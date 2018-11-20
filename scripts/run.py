@@ -1,8 +1,11 @@
 #! /usr/bin/env python
+from behavioural_vae.ros_monitor import ROSTrajectoryVAE, RosTrajectoryConvVAE
+from behavioural_vae.visual import TrajectoryVisualizer
 from motion_planning.simulation_interface import SimulationInterface
 from motion_planning.monitor import TrajectoryDemonstrator
 import argparse
 import matplotlib.pyplot as plt
+import os
 
 def generate_image(original, reconstructed, num_actions):
     fig = plt.figure(figsize=(30, 30))
@@ -18,33 +21,47 @@ def generate_image(original, reconstructed, num_actions):
 
 parser = argparse.ArgumentParser(description='Behavioral VAE demonstration')
 parser.add_argument('--vae-name', default='simple_full_b-5', type=str, help='')
-parser.add_argument('--simple-model', default='simple_full_b-5', type=str, help='')
 
-parser.add_argument('--latent-dim', default=4, type=int, help='') # VAE model determines
+parser.add_argument('--latent-dim', default=5, type=int, help='') # VAE model determines
 parser.add_argument('--num_joints', default=7, type=int, help='')
 parser.add_argument('--num_actions', default=20, type=int, help='Smoothed trajectory') # VAE model determines
 parser.add_argument('--duration', default=4, type=int, help='Duration of generated trajectory')
 
+parser.add_argument('--conv', dest='conv', action='store_true')
+parser.add_argument('--no-conv', dest='conv', action='store_false')
+parser.set_defaults(conv=False)
+
+parser.add_argument('--conv-channel', default=2, type=int, help='1D conv out channel')
+parser.add_argument('--kernel-row', default=4, type=int, help='Size of Kernel window in 1D')
+
 args = parser.parse_args()
 
-MODEL_NAME = args.vae_name
-LATENT_DIM = args.latent_dim
-DURATION = args.duration
-NUM_ACTIONS = args.num_actions
-NUM_JOINTS = args.num_joints
+model_name = args.vae_name
+latent_dim = args.latent_dim
+duration = args.duration
+num_actions = args.num_actions
+num_joints = args.num_joints
+
+MODEL_ROOT = '/home/aleksi/hacks/behavioural_ws/behaviroural_vae/behavioural_vae'
 
 def experiment():
 
     _, _, positions, results = demo.demonstrate(visualize=True)
-    generate_image(positions, results, NUM_ACTIONS)
+    generate_image(positions, results, num_actions)
 
 if __name__ == '__main__':
     simulation_interface = SimulationInterface('lumi_arm')
-    demo = TrajectoryDemonstrator(MODEL_NAME, LATENT_DIM, simulation_interface, NUM_JOINTS,
-                                  NUM_ACTIONS, DURATION)
+    if args.conv:
+        behaviour_model = RosTrajectoryConvVAE(model_name, latent_dim, num_actions, args.kernel_row, args.conv_channel,
+                                               num_joints=num_joints,  root_path=MODEL_ROOT)
+    else:
+        behaviour_model = ROSTrajectoryVAE(model_name, latent_dim, num_actions,
+                                           num_joints=num_joints,  root_path=MODEL_ROOT)
+    visualizer = TrajectoryVisualizer(os.path.join(MODEL_ROOT, 'log', model_name))
+
+    demo = TrajectoryDemonstrator(behaviour_model, latent_dim, simulation_interface, num_joints,
+                 num_actions, duration, visualizer)
     demo.reset_environment()
-
-
 
 
 #    print("Get Average Error:")
