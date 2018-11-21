@@ -10,10 +10,7 @@ MODEL_ROOT_PATH = '/home/aleksi/hacks/behavioural_ws/behaviroural_vae/behavioura
 
 class TrajectoryEnv(object):
 
-    def __init__(
-            self, behaviour_model, env_interface, num_actions, num_joints=7,
-            trajectory_duration=4
-            ):
+    def __init__(self, behaviour_model, env_interface, num_actions, num_joints=7, trajectory_duration=4):
 
         self.env_interface = env_interface
         self.behaviour_model = behaviour_model

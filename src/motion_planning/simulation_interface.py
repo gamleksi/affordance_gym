@@ -183,6 +183,8 @@ class CommunicationHandler(object):
         trajectory_msg = RobotTrajectory()
         trajectory_msg.joint_trajectory.joint_names = self.joint_names
 
+        trajectory = trajectory.transpose(1, 0)
+
         trajectory = np.concatenate((self.initial_joints, trajectory))
         num_steps = len(trajectory + 1)
         time_steps = np.linspace(0, self.duration, num_steps)
