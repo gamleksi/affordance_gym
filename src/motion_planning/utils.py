@@ -1,6 +1,7 @@
 import argparse
 import tf
 import geometry_msgs.msg
+import torch
 # arm_group: 'panda_arm'
 # reset joint values for panda [0.0, 0.0, 0.0, 0.0, 0.0, 3.1, np.pi/2]
 
@@ -68,30 +69,59 @@ def create_pose_euler(x_p, y_p, z_p, roll_rad, pitch_rad, yaw_rad):
             quaternion[2], quaternion[3])
 
 
-def parse_arguments():
+def print_pose(pose, tag='Pose'):
+    print("{}: x: {}, y: {}, z: {}".format(tag, pose[0], pose[1], pose[2]))
 
-    parser = argparse.ArgumentParser(description='ROS trajectory parser')
-    parser.add_argument('--save-path', default='/home/aleksi/catkin_ws/src/motion_planning/rl_log', type=str, help='')
-    parser.add_argument('--model-name', default='simple_full_b-5', type=str, help='')
-    parser.add_argument('--num_samples', default=20000, type=int, help='Number of samples')
-    parser.add_argument('--num_joints', default=7, type=int, help='')
-    parser.add_argument('--num_actions', default=20, type=int, help='')
-    parser.add_argument('--latent_dim', default=5, type=int, help='')
-    parser.add_argument('--duration', default=4, type=int, help='Duratoin of generated trajectory')
-    parser.add_argument('--model_name', default='no_normalization_model_v2', type=str, help='')
 
-    parser.add_argument('--normalized', dest='normalized', action='store_true')
-    parser.add_argument('--no-normalized', dest='normalized', action='store_false')
-    parser.set_defaults(normalized=False)
+def load_parameters(policy, load_path):
+    model_path = os.path.join(load_path, 'rl_model.pth.tar')
+    policy.load_state_dict(torch.load(model_path))
+    policy.eval()
+
+
+def parse_arguments(behavioural_vae, policy):
+
+    parser = argparse.ArgumentParser(description='MOTION PLANNER')
+
+    if behavioural_vae:
+
+        parser.add_argument('--vae-name', default='lumi_1DConv_b-1_l-5_a-32_ch-8', type=str, help='')
+
+        parser.add_argument('--latent-dim', default=5, type=int, help='') # VAE model determines
+        parser.add_argument('--num_joints', default=7, type=int, help='')
+        parser.add_argument('--num_actions', default=32, type=int, help='Smoothed trajectory') # VAE model determines
+        parser.add_argument('--duration', default=4, type=int, help='Duration of generated trajectory')
+
+        parser.add_argument('--conv', dest='conv', action='store_true')
+        parser.add_argument('--no-conv', dest='conv', action='store_false')
+        parser.set_defaults(conv=True)
+
+        parser.add_argument('--conv-channel', default=2, type=int, help='1D conv out channel')
+        parser.add_argument('--kernel-row', default=4, type=int, help='Size of Kernel window in 1D')
+
+    if policy:
+
+        parser.add_argument('--folder-name', default='example', type=str, help='')
+
+        parser.add_argument('--iterations', default=1000, type=int)
+
+        parser.add_argument('--batch-size', default=5, type=int)
+
+        parser.add_argument('--lr', default=1.e-3, type=float)
+
+        parser.add_argument('--debug', dest='debug', action='store_true')
+        parser.set_defaults(debug=False)
+        parser.add_argument('--random-goal', dest='random_goal', action='store_true')
+        parser.set_defaults(random_goal=False)
+        parser.add_argument('--test', dest='train', action='store_false')
+        parser.set_defaults(train=True)
 
     args = parser.parse_args()
     return args
 
-KUKA_X_LIM = [0.46, 0.76]
-KUKA_Y_LIM = [-0.4, 0.4]
-KUKA_z_LIM = [.4, .4]
-
-
 LUMI_X_LIM = [0.3, 0.55]
 LUMI_Y_LIM = [-0.4, 0.4]
 LUMI_Z_LIM = [.1, .1]
+
+BEHAVIOUR_ROOT = '/home/aleksi/hacks/behavioural_ws/behaviroural_vae/behavioural_vae'
+POLICY_ROOT = '/home/aleksi/mujoco_ws/src/motion_planning/rl_log'
