@@ -29,8 +29,7 @@ def use_cuda():
     return torch.device('cuda' if use_cuda else 'cpu')
 
 
-def save_arguments(args):
-    save_path = os.path.join('log', args.folder_name)
+def save_arguments(args, save_path):
     args = vars(args)
     if not(os.path.exists(save_path)):
         os.makedirs(save_path)
@@ -77,7 +76,6 @@ def get_trajectory_model(args):
 
 
 def main(args):
-    save_arguments(args)
     # Trajectory Interface
     trajectory_model = get_trajectory_model(args)
     random_goal = args.random_goal
@@ -85,6 +83,7 @@ def main(args):
 
     # Policy
     save_path = os.path.join(POLICY_ROOT, args.folder_name)
+    save_arguments(args, save_path)
 
     policy = Policy()
 

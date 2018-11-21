@@ -31,10 +31,10 @@ if __name__ == '__main__':
 
     args = parse_arguments(True, False)
     demo = main(args)
+    demo.generate_random_imitations(5)
 
 #    print("Get Average Error:")
 #    demo.multiple_demonstrations(10)
 #    print("Random Latent Imitations")
-#    demo.generate_random_imitations(5)
 #    print("Plottting")
 #    demo.generate_multiple_images(30)
