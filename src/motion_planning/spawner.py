@@ -45,24 +45,6 @@ def set_initial_state():
         sys.exit(2)
 
 
-#    req = SetModelStateRequest()
-#    req.model_state.pose = model_state.pose
-#    req.model_state.model_name = model_name
-#    req.model_state.reference_frame = ''
-#
-#    try:
-#        srv = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
-#        resp = srv(req)
-#    except rospy.ServiceException as e:
-#        print("   Service call failed: %s" % e)
-#        sys.exit(1)
-#    if resp.success:
-#        print(resp.status_message)
-#        return 0
-#    else:
-#        print(resp.status_message)
-#        return 1
-
 
 def spawn(model_name="single_lwr_robot", namespace=""):
     req = SpawnModelRequest()
