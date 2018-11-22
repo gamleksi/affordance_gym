@@ -85,7 +85,7 @@ def main(args):
     save_path = os.path.join(POLICY_ROOT, args.folder_name)
     save_arguments(args, save_path)
 
-    policy = Policy()
+    policy = Policy(args.latent_dim)
 
     if args.train:
         random.seed(333)

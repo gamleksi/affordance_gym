@@ -72,7 +72,7 @@ class SimulationInterface(object):
                             self.gripper_open_values)
             self.gripper_planner.plan()
             self.gripper_planner.go(wait=True)
-            rospy.sleep(1)
+            rospy.sleep(2)
 
     def current_joint_values(self):
         return self.arm_planner.get_current_joint_values()

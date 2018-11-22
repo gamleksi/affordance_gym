@@ -8,12 +8,12 @@ from motion_planning.utils import print_pose
 
 class Policy(nn.Module):
 
-    def __init__(self):
+    def __init__(self, latent_size):
         super(Policy, self).__init__()
 
         self.fc1 = nn.Linear(3, 32)
-        self.fc2_loc = nn.Linear(32, 5)
-        self.fc2_scale = nn.Linear(32, 5)
+        self.fc2_loc = nn.Linear(32, latent_size)
+        self.fc2_scale = nn.Linear(32, latent_size)
 
         self.relu = nn.ReLU()
         self.softplus = nn.Softplus()
