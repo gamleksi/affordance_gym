@@ -15,11 +15,6 @@ class Logger(object):
 
         self.log_path = log_path
 
-        if not(debug):
-            assert(not(os.path.exists(self.log_path)))
-            os.makedirs(self.log_path)
-        elif not(os.path.exists(self.log_path)):
-            os.makedirs(self.log_path)
 
     def visualize_rewards(self):
         plt.figure()

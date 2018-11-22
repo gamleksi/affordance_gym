@@ -30,6 +30,8 @@ def use_cuda():
 
 
 def save_arguments(args, save_path):
+
+    assert(args.debug or not(os.path.exists(save_path)))
     args = vars(args)
     if not(os.path.exists(save_path)):
         os.makedirs(save_path)

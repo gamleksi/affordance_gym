@@ -154,7 +154,7 @@ class SimulationInterface(object):
         succeed = self.arm_planner.execute(plan)
         return succeed
 
-    def reset(self):
+    def reset(self, duration):
 
         self.arm_planner.clear_pose_targets()
         reset = rospy.ServiceProxy('lumi_mujoco/reset', Empty)
@@ -163,7 +163,7 @@ class SimulationInterface(object):
         except rospy.ServiceException as exc:
             print("Reset did not work:" + str(exc))
 
-        rospy.sleep(1.0)
+        rospy.sleep(duration)
 #        self.gripper_close()
 
 

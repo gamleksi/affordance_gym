@@ -24,14 +24,14 @@ def main(args):
 
     demo = TrajectoryDemonstrator(behaviour_model, latent_dim, simulation_interface, num_joints,
                  num_actions, duration, visualizer)
-    demo.reset_environment()
+    demo.reset_environment(3.0)
     return demo
 
 if __name__ == '__main__':
 
     args = parse_arguments(True, False)
     demo = main(args)
-    demo.generate_random_imitations(5)
+    demo.reset_environment(1.0)
 
 #    print("Get Average Error:")
 #    demo.multiple_demonstrations(10)

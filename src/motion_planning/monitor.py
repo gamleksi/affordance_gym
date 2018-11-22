@@ -19,12 +19,12 @@ class TrajectoryEnv(object):
         self.num_actions = num_actions
         self.num_joints = num_joints
 
-    def reset_environment(self):
+    def reset_environment(self, duration=1.0):
 
         # Reset Simulation
         # Clear Controller target
 
-        self.env_interface.reset()
+        self.env_interface.reset(float(duration))
 
     def process_plan(self, plan):
 
