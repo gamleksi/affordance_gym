@@ -1,12 +1,14 @@
+import torch
 import numpy as np
 from motion_planning.utils import LUMI_X_LIM, LUMI_Y_LIM, LUMI_Z_LIM
 
 
 class SimpleEnvironment(object):
 
-    def __init__(self, trajectory_model, random_goal):
+    def __init__(self, trajectory_model, random_goal, device):
         self.trajectory_model = trajectory_model
         self.random_goal = random_goal
+        self.device = device
 
     def get_state(self):
 
@@ -22,7 +24,10 @@ class SimpleEnvironment(object):
         return np.array([x, y, z]), np.array([x, y, z])
 
     def get_reward(self, goal, end_pose):
-        reward = -np.linalg.norm(goal - end_pose)
+        norm_denumerator = [1. / (LUMI_X_LIM[1] - LUMI_X_LIM[0]), 1. / (LUMI_Y_LIM[1] - LUMI_Y_LIM[0]), 1.]
+        norm_denumerator = torch.tensor(norm_denumerator).to(self.device)
+        norm_diff = (goal - end_pose) * norm_denumerator
+        reward = -np.linalg.norm(norm_diff)
         return reward
 
     def do_action(self, action):

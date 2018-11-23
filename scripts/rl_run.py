@@ -81,7 +81,9 @@ def main(args):
     # Trajectory Interface
     trajectory_model = get_trajectory_model(args)
     random_goal = args.random_goal
-    env = SimpleEnvironment(trajectory_model, random_goal)
+    device = use_cuda()
+
+    env = SimpleEnvironment(trajectory_model, random_goal, device)
 
     # Policy
     save_path = os.path.join(POLICY_ROOT, args.folder_name)
@@ -98,7 +100,6 @@ def main(args):
 
     logger = Logger(save_path) if args.train else None
 
-    device = use_cuda()
     policy.to(device)
 
     algo = PolicyGradient(env, policy, args.lr, device, logger=logger)
