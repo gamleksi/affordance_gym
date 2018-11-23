@@ -1,10 +1,8 @@
+import os
 import argparse
 import tf
 import geometry_msgs.msg
 import torch
-# arm_group: 'panda_arm'
-# reset joint values for panda [0.0, 0.0, 0.0, 0.0, 0.0, 3.1, np.pi/2]
-
 
 def create_pose(x_p, y_p, z_p, x_o, y_o, z_o, w_o):
     """Creates a pose using quaternions

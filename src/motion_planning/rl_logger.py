@@ -3,11 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv
 import torch
+import pandas as pd
 
 
 class Logger(object):
 
-    def __init__(self, log_path, debug=False):
+    def __init__(self, log_path):
 
         self.rewards = []
         self.losses = []
@@ -15,10 +16,24 @@ class Logger(object):
 
         self.log_path = log_path
 
+    def visualize_rewards(self, window=50):
 
-    def visualize_rewards(self):
-        plt.figure()
-        plt.plot(self.rewards)
+        # https://medium.com/@ts1829/policy-gradient-reinforcement-learning-in-pytorch-df1383ea0baf
+        fig, ((ax1), (ax2)) = plt.subplots(2, 1, sharey=True, figsize=[9, 9])
+        rolling_mean = pd.Series(self.rewards).rolling(window).mean()
+        std = pd.Series(self.rewards).rolling(window).std()
+        ax1.plot(rolling_mean)
+        ax1.fill_between(range(len(self.rewards)), rolling_mean - std, rolling_mean + std, color='orange',
+                         alpha=0.2)
+        ax1.set_title('Negative Distance to the Goal Coordinate Moving Average ({}-episode window)'.format(window))
+        ax1.set_xlabel('Episode')
+        ax1.set_ylabel('Distance')
+
+        ax2.plot(self.rewards)
+        ax2.set_title('Negative distance to the goal coordinate')
+        ax2.set_xlabel('Episode')
+        ax2.set_ylabel('Distance')
+        fig.tight_layout(pad=2)
         plt.savefig(os.path.join(self.log_path, 'rewards.png'))
         plt.close()
 

@@ -85,18 +85,18 @@ def main(args):
 
     # Policy
     save_path = os.path.join(POLICY_ROOT, args.folder_name)
-    save_arguments(args, save_path)
 
     policy = Policy(args.latent_dim)
 
     if args.train:
+        save_arguments(args, save_path)
         random.seed(333)
         torch.manual_seed(333)
         gauss_init(policy)
     else:
         load_parameters(policy, save_path)
 
-    logger = Logger(save_path, debug=args.debug) if args.train else None
+    logger = Logger(save_path) if args.train else None
 
     device = use_cuda()
     policy.to(device)
