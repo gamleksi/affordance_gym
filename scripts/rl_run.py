@@ -15,6 +15,7 @@ from motion_planning.rl_env import SimpleEnvironment
 from motion_planning.simulation_interface import SimulationInterface
 from motion_planning.monitor import TrajectoryDemonstrator
 from motion_planning.utils import parse_arguments, BEHAVIOUR_ROOT, POLICY_ROOT, load_parameters
+import rospy
 
 
 def use_cuda():
@@ -103,6 +104,8 @@ def main(args):
     policy.to(device)
 
     algo = PolicyGradient(env, policy, args.lr, device, logger=logger)
+
+    rospy.is_shutdown()
 
     if args.train:
         algo.run(args.iterations, args.batch_size)
