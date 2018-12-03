@@ -83,16 +83,16 @@ def parse_arguments(behavioural_vae, policy):
 
     if behavioural_vae:
 
-        parser.add_argument('--vae-name', default='lumi_1DConv_b-1_l-5_a-32_ch-8', type=str, help='')
+        parser.add_argument('--vae-name', default='mse_fc_v1', type=str, help='')
 
         parser.add_argument('--latent-dim', default=5, type=int, help='') # VAE model determines
         parser.add_argument('--num_joints', default=7, type=int, help='')
-        parser.add_argument('--num_actions', default=32, type=int, help='Smoothed trajectory') # VAE model determines
+        parser.add_argument('--num_actions', default=24, type=int, help='Smoothed trajectory') # VAE model determines
         parser.add_argument('--duration', default=0.5, type=float, help='Duration of generated trajectory')
 
         parser.add_argument('--conv', dest='conv', action='store_true')
         parser.add_argument('--no-conv', dest='conv', action='store_false')
-        parser.set_defaults(conv=True)
+        parser.set_defaults(conv=False)
 
         parser.add_argument('--conv-channel', default=2, type=int, help='1D conv out channel')
         parser.add_argument('--kernel-row', default=4, type=int, help='Size of Kernel window in 1D')

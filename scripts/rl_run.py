@@ -78,8 +78,9 @@ def get_trajectory_model(args):
     return demo
 
 
-def main(args):
-    # Trajectory Interface
+if __name__ == '__main__':
+    args = parse_arguments(True, True)
+
     trajectory_model = get_trajectory_model(args)
     random_goal = args.random_goal
     device = use_cuda()
@@ -111,9 +112,3 @@ def main(args):
         algo.run(args.iterations, args.batch_size)
     else:
         algo.eval()
-    return algo
-
-if __name__ == '__main__':
-    args = parse_arguments(True, True)
-    algo = main(args)
-

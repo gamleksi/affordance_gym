@@ -11,19 +11,26 @@ class Policy(nn.Module):
     def __init__(self, latent_size):
         super(Policy, self).__init__()
 
-        self.fc1 = nn.Linear(3, 32)
-        self.fc2_loc = nn.Linear(32, latent_size)
-        self.fc2_scale = nn.Linear(32, latent_size)
+        self.fc1_mean = nn.Linear(3, 24)
+        self.fc2_mean = nn.Linear(24, 24)
+        self.fc3_mean = nn.Linear(24, latent_size)
 
-        self.relu = nn.ReLU()
+        self.fc1_scale = nn.Linear(3, 24)
+        self.fc2_scale = nn.Linear(24, 24)
+        self.fc3_scale = nn.Linear(24, latent_size)
+
+        self.tanh = nn.Tanh()
         self.softplus = nn.Softplus()
 
     def forward(self, x):
 
-        x = self.relu(self.fc1(x))
+        loc = self.tanh(self.fc1_mean(x))
+        loc = self.tanh(self.fc2_mean(loc))
+        loc = self.fc3_mean(loc)
 
-        loc = self.fc2_loc(x)
-        scale = self.softplus(self.fc2_scale(x))
+        scale = self.tanh(self.fc1_scale(x))
+        scale = self.tanh(self.fc2_scale(scale))
+        scale = self.softplus(self.fc3_scale(scale))
 
         return loc, scale
 
@@ -50,11 +57,12 @@ class PolicyGradient(object):
         locs, scales = self.policy.forward(Variable(state))
 
         if train:
+
             self.logger.update_actions(locs, scales)
             distribution = Normal(locs, scales)
             action = distribution.sample()
             probs = distribution.log_prob(action)
-            self.action_probs.append(-torch.sum(probs))
+            self.action_probs.append(torch.sum(probs))
         else:
             action = locs
 
@@ -63,20 +71,19 @@ class PolicyGradient(object):
     def review_iteration(self):
 
         rewards = torch.FloatTensor(self.rewards).to(self.device)
-        rewards_mean = torch.mean(rewards)
-        rewards_std = torch.std(rewards)
-        normalized_rewards = (rewards - rewards_mean) / (rewards_std + 1.e-7)
 
-        action_neg_log_probs = self.action_probs
-        loss = 0.
+        normalized_rewards = (rewards - torch.mean(rewards)) / (torch.std(rewards) + 1.e-7)
 
-        for r, p in zip(normalized_rewards, action_neg_log_probs):
-            loss += r * p
+        policy_loss = 0.0
 
-        loss.backward()
+        for reward, log_prob in zip(normalized_rewards, self.action_probs):
+            # policy_loss.append(-log_prob * reward)
+            policy_loss += -log_prob * reward
+
+        policy_loss.backward()
         self.optimizer.step()
 
-        return loss.cpu().item()
+        return policy_loss.cpu().item()
 
     def step(self, train=True):
         state, goal_pose = self.env.get_state()
