@@ -22,6 +22,15 @@ class Policy(nn.Module):
         self.tanh = nn.Tanh()
         self.softplus = nn.Softplus()
 
+    def print_model(self):
+
+        print(self.fc1_mean.weight)
+        print(self.fc1_mean.bias)
+        print(self.fc2_mean.weight)
+        print(self.fc2_mean.bias)
+        print(self.fc3_mean.weight)
+        print(self.fc3_mean.bias)
+
     def forward(self, x):
 
         loc = self.tanh(self.fc1_mean(x))
@@ -57,7 +66,6 @@ class PolicyGradient(object):
         locs, scales = self.policy.forward(Variable(state))
 
         if train:
-
             self.logger.update_actions(locs, scales)
             distribution = Normal(locs, scales)
             action = distribution.sample()
@@ -82,6 +90,7 @@ class PolicyGradient(object):
 
         policy_loss.backward()
         self.optimizer.step()
+        self.optimizer.zero_grad()
 
         return policy_loss.cpu().item()
 
@@ -101,7 +110,6 @@ class PolicyGradient(object):
             for s in range(batch_size):
                 reward, end_pose, goal_pose = self.step()
                 self.env.reset()
-
                 self.rewards.append(reward)
                 iter_reward += reward
                 print('Reward: {}'.format(reward))

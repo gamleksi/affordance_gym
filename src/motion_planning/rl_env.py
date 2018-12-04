@@ -1,4 +1,3 @@
-import torch
 import numpy as np
 from motion_planning.utils import LUMI_X_LIM, LUMI_Y_LIM, LUMI_Z_LIM
 

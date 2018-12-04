@@ -51,7 +51,7 @@ def gauss_init(net):
             torch.nn.init.constant_(m.weight, 1)
             torch.nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.Linear):
-            torch.nn.init.normal_(m.weight, std=1e-3)
+            torch.nn.init.normal_(m.weight, std=1e-1)
             if m.bias is not None:
                 torch.nn.init.constant_(m.bias, 0)
 
