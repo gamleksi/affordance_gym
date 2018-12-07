@@ -98,7 +98,7 @@ class PolicyGradient(object):
         state, goal_pose = self.env.get_state()
         action = self.select_action(state, train=train)
         end_pose = self.env.do_action(action)
-        reward = self.env.get_reward(goal_pose, end_pose)
+        reward = self.env.get_reward(goal_pose, end_pose, train=train)
         return reward, end_pose, goal_pose
 
     def run(self, num_iterations, batch_size):

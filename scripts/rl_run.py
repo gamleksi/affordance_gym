@@ -113,7 +113,7 @@ if __name__ == '__main__':
     else:
 
         import numpy as np
-        num_steps = 100
+        num_steps = 40
         rewards = np.zeros(num_steps)
         for i in range(num_steps):
             rewards[i] = algo.eval()

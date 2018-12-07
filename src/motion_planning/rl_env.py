@@ -22,13 +22,14 @@ class SimpleEnvironment(object):
 
         return np.array([x, y, z]), np.array([x, y, z])
 
-    def get_reward(self, goal, end_pose):
+    def get_reward(self, goal, end_pose, train=False):
 
-        norm_denumerator = np.array([1. / (LUMI_X_LIM[1] - LUMI_X_LIM[0]), 1. / (LUMI_Y_LIM[1] - LUMI_Y_LIM[0])])
-        diff = (goal[:2] - end_pose[:2]) # * norm_denumerator
-        # reward = - np.sum((diff) ** 2)
-        reward = - np.linalg.norm(diff)
-        return reward
+        if train:
+            norm_denumerator = np.array([1. / (LUMI_X_LIM[1] - LUMI_X_LIM[0]), 1. / (LUMI_Y_LIM[1] - LUMI_Y_LIM[0])])
+            diff = (goal[:2] - end_pose[:2]) * norm_denumerator
+            return - np.sum((diff) ** 2)
+        else:
+            return np.linalg.norm(goal[:2] - end_pose[:2])
 
     def do_action(self, action):
         _, achieved_pose = self.trajectory_model.do_latent_imitation(
