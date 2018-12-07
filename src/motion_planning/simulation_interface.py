@@ -7,7 +7,11 @@ import numpy as np
 import random
 from motion_planning.utils import LUMI_Y_LIM, LUMI_X_LIM, LUMI_Z_LIM
 from motion_planning.utils import create_pose_euler
+from mujoco_ros_control.srv import ChangePose
 from std_srvs.srv import Empty
+from sensor_msgs.msg import Image
+import cv_bridge
+
 
 # Adding obstacles:
 
@@ -154,7 +158,7 @@ class SimulationInterface(object):
         succeed = self.arm_planner.execute(plan)
         return succeed
 
-    def reset(self, duration):
+    def reset(self,duration ):
 
         self.arm_planner.clear_pose_targets()
         reset = rospy.ServiceProxy('lumi_mujoco/reset', Empty)
@@ -164,7 +168,29 @@ class SimulationInterface(object):
             print("Reset did not work:" + str(exc))
 
         rospy.sleep(duration)
-#        self.gripper_close()
+
+    def reset_table(self, x, y, duration):
+
+       self.arm_planner.clear_pose_targets()
+
+       reset = rospy.ServiceProxy('lumi_mujoco/reset_table', ChangePose)
+       try:
+           reset(x, y, 0)
+       except rospy.ServiceException as exc:
+           print("Reset did not work:" + str(exc))
+
+       rospy.sleep(duration)
+
+    def capture_image(self):
+
+        try:
+            image_msg = rospy.wait_for_message("/lumi_mujoco/rgb", Image)
+            img = cv_bridge.CvBridge().imgmsg_to_cv2(image_msg, "rgb8")
+            img_arr = np.uint8(img)
+            return img_arr
+        except rospy.exceptions.ROSException as e:
+            print(e)
+            return None
 
 
 from moveit_msgs.msg import RobotTrajectory, genpy

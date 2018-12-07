@@ -25,9 +25,9 @@ class SimpleEnvironment(object):
     def get_reward(self, goal, end_pose):
 
         norm_denumerator = np.array([1. / (LUMI_X_LIM[1] - LUMI_X_LIM[0]), 1. / (LUMI_Y_LIM[1] - LUMI_Y_LIM[0])])
-        diff = (goal[:2] - end_pose[:2]) * norm_denumerator
-        reward = - np.sum((diff) ** 2)
-        # reward = - np.linalg.norm(diff)
+        diff = (goal[:2] - end_pose[:2]) # * norm_denumerator
+        # reward = - np.sum((diff) ** 2)
+        reward = - np.linalg.norm(diff)
         return reward
 
     def do_action(self, action):

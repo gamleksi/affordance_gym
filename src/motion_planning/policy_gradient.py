@@ -19,7 +19,7 @@ class Policy(nn.Module):
         self.fc2_scale = nn.Linear(24, 24)
         self.fc3_scale = nn.Linear(24, latent_size)
 
-        self.tanh = nn.Tanh()
+        self.relu = nn.ReLU()
         self.softplus = nn.Softplus()
 
     def print_model(self):
@@ -33,12 +33,12 @@ class Policy(nn.Module):
 
     def forward(self, x):
 
-        loc = self.tanh(self.fc1_mean(x))
-        loc = self.tanh(self.fc2_mean(loc))
+        loc = self.relu(self.fc1_mean(x))
+        loc = self.relu(self.fc2_mean(loc))
         loc = self.fc3_mean(loc)
 
-        scale = self.tanh(self.fc1_scale(x))
-        scale = self.tanh(self.fc2_scale(scale))
+        scale = self.relu(self.fc1_scale(x))
+        scale = self.relu(self.fc2_scale(scale))
         scale = self.softplus(self.fc3_scale(scale))
 
         return loc, scale
@@ -126,7 +126,9 @@ class PolicyGradient(object):
                 i, loss, iter_reward))
 
     def eval(self):
+        self.env.reset()
         reward, end_pose, goal_pose = self.step(train=False)
         print('Reward: {}'.format(reward))
         print_pose(goal_pose, tag='GOAL')
         print_pose(end_pose, tag='Result')
+        return reward

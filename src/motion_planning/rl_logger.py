@@ -86,9 +86,9 @@ class Logger(object):
     def update_actions(self, locs, scales):
 
         row = {'locs': locs, 'scales': scales}
-
         csv_path = os.path.join(self.log_path, 'actions.csv')
         file_exists = os.path.isfile(csv_path)
+
         with open(csv_path, 'a') as f:
             writer = csv.DictWriter(
                 f,

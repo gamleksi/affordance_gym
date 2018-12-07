@@ -77,7 +77,7 @@ def load_parameters(policy, load_path):
     policy.eval()
 
 
-def parse_arguments(behavioural_vae, policy):
+def parse_arguments(behavioural_vae=False, policy=False, gibson=False):
 
     parser = argparse.ArgumentParser(description='MOTION PLANNER')
 
@@ -114,6 +114,11 @@ def parse_arguments(behavioural_vae, policy):
         parser.add_argument('--test', dest='train', action='store_false')
         parser.set_defaults(train=True)
 
+    if gibson:
+
+        parser.add_argument('--g-name', default='rgb_test', type=str)
+        parser.add_argument('--g-latent', default=10, type=int)
+
     args = parser.parse_args()
     return args
 
@@ -123,3 +128,4 @@ LUMI_Z_LIM = [.1, .1]
 
 BEHAVIOUR_ROOT = '/home/aleksi/hacks/behavioural_ws/behaviroural_vae/behavioural_vae'
 POLICY_ROOT = '/home/aleksi/mujoco_ws/src/motion_planning/rl_log'
+GIBSON_ROOT = '/home/aleksi/hacks/vae_ws/gibson/gibson'

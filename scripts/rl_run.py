@@ -51,7 +51,7 @@ def gauss_init(net):
             torch.nn.init.constant_(m.weight, 1)
             torch.nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.Linear):
-            torch.nn.init.normal_(m.weight, std=1e-1)
+            torch.nn.init.normal_(m.weight, std=1e-3)
             if m.bias is not None:
                 torch.nn.init.constant_(m.bias, 0)
 
@@ -111,4 +111,12 @@ if __name__ == '__main__':
     if args.train:
         algo.run(args.iterations, args.batch_size)
     else:
-        algo.eval()
+
+        import numpy as np
+        num_steps = 100
+        rewards = np.zeros(num_steps)
+        for i in range(num_steps):
+            rewards[i] = algo.eval()
+
+        print("AVG: ", rewards.mean(), " VAR: ", rewards.var())
+
