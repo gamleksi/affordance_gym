@@ -7,7 +7,6 @@ from motion_planning.utils import parse_arguments, GIBSON_ROOT
 from motion_planning.simulation_interface import SimulationInterface
 from gibson.tools import affordance_to_array
 from gibson.ros_monitor import RosPerceptionVAE
-import rospy
 
 
 def sample_visualize(image, affordance, model_path, id):
@@ -31,7 +30,8 @@ def sample_visualize(image, affordance, model_path, id):
     plt.savefig(os.path.join(sample_path, 'sample_{}.png'.format(id)))
     plt.close(fig)
 
-class Experiment():
+
+class Experiment:
 
     def __init__(self, model, planner):
         self.model = model
@@ -49,6 +49,7 @@ class Experiment():
 
 
 if __name__  == '__main__':
+
     args = parse_arguments(False, False, True)
     model = RosPerceptionVAE(args.g_name, args.g_latent, root_path=GIBSON_ROOT)
     planner = SimulationInterface(arm_name='lumi_arm')
