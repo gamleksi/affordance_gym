@@ -41,17 +41,17 @@ GRIPPER_OPEN_VALUES = (0.04, 0.04)
 
 class SimulationInterface(object):
 
-    def __init__(self, arm_name, gripper_name=None, gripper_open_values=GRIPPER_OPEN_VALUES,
+    def __init__(self, arm_name, gripper_name=None, planning_id='RRT', gripper_open_values=GRIPPER_OPEN_VALUES,
                  gripper_position_limit=GRIPPER_POSITION_LIMITS):
 
         # Initialize Moveit Node interface
         mc.roscpp_initialize(sys.argv)
         rospy.init_node('motion_planning', anonymous=True)
 
-        self.arm_planner = self.build_planning_interface(arm_name)
+        self.arm_planner = self.build_planning_interface(arm_name, planning_id)
 
         if gripper_name is not None:
-            self.gripper_planner = self.build_planning_interface(gripper_name)
+            self.gripper_planner = self.build_planning_interface(gripper_name, planning_id)
             self.gripper_open_values = gripper_open_values
         else:
             self.gripper_planner = None
@@ -59,10 +59,10 @@ class SimulationInterface(object):
         self.gripper_position_limit = gripper_position_limit
 
 
-    def build_planning_interface(self, name):
+    def build_planning_interface(self, name, planning_id):
 
         arm = mc.MoveGroupCommander(name)
-        arm.set_planner_id("ESTkConfigDefault")
+        arm.set_planner_id(planning_id)
         arm.allow_replanning(False)
         arm.set_goal_position_tolerance(0.0005)
         arm.set_goal_orientation_tolerance(0.005)

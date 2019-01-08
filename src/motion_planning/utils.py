@@ -77,7 +77,7 @@ def load_parameters(policy, load_path):
     policy.eval()
 
 
-def parse_arguments(behavioural_vae=False, policy=False, gibson=False):
+def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=False):
 
     parser = argparse.ArgumentParser(description='MOTION PLANNER')
 
@@ -118,6 +118,9 @@ def parse_arguments(behavioural_vae=False, policy=False, gibson=False):
 
         parser.add_argument('--g-name', default='rgb_test', type=str)
         parser.add_argument('--g-latent', default=10, type=int)
+
+    if debug:
+        parser.add_argument('--dataset-name', default='lumi_rtt_star_v2')
 
     args = parser.parse_args()
     return args

@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
-from torch.distributions.normal import Normal
+# from torch.distributions.normal import Normal, MultivariateNormal
+from torch.distributions import MultivariateNormal
 from motion_planning.utils import print_pose
 
 
@@ -67,7 +68,9 @@ class PolicyGradient(object):
 
         if train:
             self.logger.update_actions(locs, scales)
-            distribution = Normal(locs, scales)
+            # distribution = Normal(locs, scales)
+            scales = torch.diag(scales[0])
+            distribution = MultivariateNormal(locs, scales)
             action = distribution.sample()
             probs = distribution.log_prob(action)
             self.action_probs.append(torch.sum(probs))
@@ -79,7 +82,6 @@ class PolicyGradient(object):
     def review_iteration(self):
 
         rewards = torch.FloatTensor(self.rewards).to(self.device)
-
         normalized_rewards = (rewards - torch.mean(rewards)) / (torch.std(rewards) + 1.e-7)
 
         policy_loss = 0.0

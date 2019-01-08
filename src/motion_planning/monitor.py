@@ -59,7 +59,7 @@ class TrajectoryEnv(object):
         # Returns normalized raw trajectory
 
         positions = self.process_plan(plan)
-        result = self.behaviour_model.get_result(positions)
+        result, _ = self.behaviour_model.get_result(positions)
         return result
 
     def imitate_plan(self, plan):
@@ -72,6 +72,18 @@ class TrajectoryEnv(object):
         self.env_interface.do_plan(result_plan)
 
         return result, self.env_interface.current_joint_values()
+
+    def imitate_trajectory(self, trajectory):
+
+       # Gets Normalized Trajectory
+       # Generates a plan of the trajectory
+       # does the imitation
+
+       recon, latent = self.behaviour_model.get_result(trajectory)
+       plan = self.msg_handler.build_message(self.unnormalize_positions(recon))
+       self.env_interface.do_plan(plan)
+
+       return self.env_interface.current_pose(), recon, latent
 
     def get_latent_imitation(self, latent):
         # Returns a normalized position trajectory of a given latent
