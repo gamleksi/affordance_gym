@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
 # from torch.distributions.normal import Normal, MultivariateNormal
+import numpy as np
 from torch.distributions import MultivariateNormal
 from motion_planning.utils import print_pose
 
@@ -64,7 +65,8 @@ class PolicyGradient(object):
     def select_action(self, state, train=True):
 
         state = torch.from_numpy(state).float().unsqueeze(0).to(self.device)
-        locs, scales = self.policy.forward(Variable(state))
+        # locs, scales = self.policy.forward(Variable(state))
+        locs = self.policy.forward(Variable(state))
 
         if train:
             self.logger.update_actions(locs, scales)
@@ -131,6 +133,7 @@ class PolicyGradient(object):
         self.env.reset()
         reward, end_pose, goal_pose = self.step(train=False)
         print('Reward: {}'.format(reward))
-        print_pose(goal_pose, tag='GOAL')
-        print_pose(end_pose, tag='Result')
+        print("end_pose abs", np.abs(end_pose[:2] - goal_pose[:2]))
+        # print_pose(goal_pose, tag='GOAL')
+        # print_pose(end_pose, tag='Result')
         return reward

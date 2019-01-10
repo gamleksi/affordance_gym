@@ -71,13 +71,13 @@ def print_pose(pose, tag='Pose'):
     print("{}: x: {}, y: {}, z: {}".format(tag, pose[0], pose[1], pose[2]))
 
 
-def load_parameters(policy, load_path):
-    model_path = os.path.join(load_path, 'rl_model.pth.tar')
-    policy.load_state_dict(torch.load(model_path))
-    policy.eval()
+def load_parameters(model, load_path, model_name):
+    model_path = os.path.join(load_path, "{}.pth.tar".format(model_name))
+    model.load_state_dict(torch.load(model_path))
+    model.eval()
 
 
-def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=False):
+def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=False, feedforward=False):
 
     parser = argparse.ArgumentParser(description='MOTION PLANNER')
 
@@ -122,8 +122,29 @@ def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=Fal
     if debug:
         parser.add_argument('--dataset-name', default='lumi_rtt_star_v2')
 
+    if feedforward:
+
+       parser.add_argument('--random-goal', dest='random_goal', action='store_true')
+       parser.set_defaults(random_goal=False)
+       parser.add_argument('--policy-name', type=str, default='example')
+       parser.add_argument('--num-steps', default=10, type=int)
+       parser.add_argument('--model-index', default=-1, type=int)
+
     args = parser.parse_args()
     return args
+
+
+
+def use_cuda():
+
+    use_cuda = torch.cuda.is_available()
+    if use_cuda:
+        print('GPU works!')
+    else:
+        for i in range(10):
+            print('YOU ARE NOT USING GPU')
+
+    return torch.device('cuda' if use_cuda else 'cpu')
 
 LUMI_X_LIM = [0.3, 0.55]
 LUMI_Y_LIM = [-0.4, 0.4]

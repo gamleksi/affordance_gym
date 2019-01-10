@@ -7,20 +7,18 @@ class SimpleEnvironment(object):
     def __init__(self, trajectory_model, random_goal, device):
         self.trajectory_model = trajectory_model
         self.random_goal = random_goal
-        self.device = device
+        self.device = device # TODO is this necessary?
 
     def get_state(self):
 
         if self.random_goal:
-            x = np.random.uniform(LUMI_X_LIM[0], LUMI_X_LIM[1])
+            x = np.random.uniform(LUMI_X_LIM[0] + 0.1, LUMI_X_LIM[1])
             y = np.random.uniform(LUMI_Y_LIM[0], LUMI_Y_LIM[1])
-            z = np.random.uniform(LUMI_Z_LIM[0], LUMI_Z_LIM[1])
         else:
-            x = (LUMI_X_LIM[0] + LUMI_X_LIM[1]) / 2.
+            x = (LUMI_X_LIM[0] + 0.1 + LUMI_X_LIM[1]) / 2.
             y = (LUMI_Y_LIM[0] + LUMI_Y_LIM[1]) / 2.
-            z = (LUMI_Z_LIM[0] + LUMI_Z_LIM[1]) / 2.
 
-        return np.array([x, y, z]), np.array([x, y, z])
+        return np.array([x, y]), np.array([x, y])
 
     def get_reward(self, goal, end_pose, train=False):
 

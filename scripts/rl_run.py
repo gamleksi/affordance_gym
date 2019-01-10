@@ -14,20 +14,8 @@ from motion_planning.rl_env import SimpleEnvironment
 
 from motion_planning.simulation_interface import SimulationInterface
 from motion_planning.monitor import TrajectoryDemonstrator
-from motion_planning.utils import parse_arguments, BEHAVIOUR_ROOT, POLICY_ROOT, load_parameters
+from motion_planning.utils import parse_arguments, BEHAVIOUR_ROOT, POLICY_ROOT, load_parameters, use_cuda
 import rospy
-
-
-def use_cuda():
-
-    use_cuda = torch.cuda.is_available()
-    if use_cuda:
-        print('GPU works!')
-    else:
-        for i in range(10):
-            print('YOU ARE NOT USING GPU')
-
-    return torch.device('cuda' if use_cuda else 'cpu')
 
 
 def save_arguments(args, save_path):
@@ -42,6 +30,7 @@ def save_arguments(args, save_path):
 
 
 def gauss_init(net):
+
     for m in net.modules():
         if isinstance(m, nn.Conv2d):
             torch.nn.init.normal_(m.weight, std=0.01)
@@ -56,6 +45,7 @@ def gauss_init(net):
                 torch.nn.init.constant_(m.bias, 0)
 
 
+# Behavioral VAE args
 def get_trajectory_model(args):
 
     model_name = args.vae_name
@@ -111,7 +101,6 @@ if __name__ == '__main__':
     if args.train:
         algo.run(args.iterations, args.batch_size)
     else:
-
         import numpy as np
         num_steps = 40
         rewards = np.zeros(num_steps)
