@@ -1,17 +1,17 @@
-from motion_planning.utils import parse_arguments, GIBSON_ROOT, BEHAVIOUR_ROOT, save_arguments, use_cuda,
-from motion_planning.utils import plot_loss, plot_scatter, plot_latent_distributions
-from behavioural_vae.utils import MIN_ANGLE, MAX_ANGLE
-from behavioural_vae.ros_monitor import ROSTrajectoryVAE
 import os
-
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
 from torch.utils import data
 from torch.nn import functional as F
-
 import numpy as np
+
+from motion_planning.utils import parse_arguments, GIBSON_ROOT, BEHAVIOUR_ROOT, save_arguments, use_cuda
+from motion_planning.utils import plot_loss, plot_scatter, plot_latent_distributions
+from behavioural_vae.utils import MIN_ANGLE, MAX_ANGLE
+from behavioural_vae.ros_monitor import ROSTrajectoryVAE
+
 
 class Predictor(nn.Module):
 
