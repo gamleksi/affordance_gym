@@ -1,8 +1,10 @@
+# coding=utf-8
 import os
 import argparse
 import tf
 import geometry_msgs.msg
 import torch
+import matplotlib.pyplot as plt
 
 def create_pose(x_p, y_p, z_p, x_o, y_o, z_o, w_o):
     """Creates a pose using quaternions
@@ -59,12 +61,15 @@ def create_pose_euler(x_p, y_p, z_p, roll_rad, pitch_rad, yaw_rad):
     :returns: Pose
     :rtype: PoseStamped
     """
+
     quaternion = tf.transformations.quaternion_from_euler(
             roll_rad, pitch_rad, yaw_rad)
     return create_pose(
             x_p, y_p, z_p,
             quaternion[0], quaternion[1],
             quaternion[2], quaternion[3])
+
+
 
 
 def print_pose(pose, tag='Pose'):
@@ -96,23 +101,22 @@ def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=Fal
 
         parser.add_argument('--conv-channel', default=2, type=int, help='1D conv out channel')
         parser.add_argument('--kernel-row', default=4, type=int, help='Size of Kernel window in 1D')
+        parser.add_argument('--model-index', default=-1, type=int)
 
     if policy:
 
-        parser.add_argument('--folder-name', default='example', type=str, help='')
+        parser.add_argument('--policy-name', default='example', type=str, help='')
 
-        parser.add_argument('--iterations', default=1000, type=int)
+        parser.add_argument('--num-epoch', default=1000, type=int)
 
-        parser.add_argument('--batch-size', default=5, type=int)
+        parser.add_argument('--batch-size', default=124, type=int)
 
         parser.add_argument('--lr', default=1.e-3, type=float)
 
-        parser.add_argument('--debug', dest='debug', action='store_true')
-        parser.set_defaults(debug=False)
-        parser.add_argument('--random-goal', dest='random_goal', action='store_true')
-        parser.set_defaults(random_goal=False)
         parser.add_argument('--test', dest='train', action='store_false')
         parser.set_defaults(train=True)
+
+        parser.add_argument('--num-processes', default=16, type=int)
 
     if gibson:
 
@@ -128,7 +132,9 @@ def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=Fal
        parser.set_defaults(random_goal=False)
        parser.add_argument('--policy-name', type=str, default='example')
        parser.add_argument('--num-steps', default=10, type=int)
-       parser.add_argument('--model-index', default=-1, type=int)
+
+
+    parser.add_argument('--debug', dest='debug', action='store_true')
 
     args = parser.parse_args()
     return args
@@ -146,9 +152,59 @@ def use_cuda():
 
     return torch.device('cuda' if use_cuda else 'cpu')
 
+def save_arguments(args, save_path):
+
+    args = vars(args)
+
+    if not(os.path.exists(save_path)):
+        os.makedirs(save_path)
+
+    file = open(os.path.join(save_path, "arguments.txt"), 'w')
+    lines = [item[0] + " " + str(item[1]) + "\n" for item in args.items()]
+    file.writelines(lines)
+
+
+def plot_loss(train, val, title, save_to):
+
+    steps = range(1, train.__len__() + 1)
+
+    fig = plt.figure()
+
+    plt.plot(steps, train, 'r', label='Train')
+    plt.plot(steps, val, 'b', label='Validation')
+
+    plt.title(title)
+    plt.legend()
+    plt.savefig(save_to)
+    plt.close()
+
+
+def plot_scatter(constructed, targets, save_to):
+    fig = plt.figure()
+    plt.scatter(targets[:, 0], targets[:, 1], label='targets')
+    plt.scatter(constructed[:, 0], constructed[:, 1], label='constructed')
+    plt.legend()
+    plt.savefig(save_to)
+    plt.close()
+
+def plot_latent_distributions(latents, save_to):
+
+    fig, axes = plt.subplots(latents.shape[1], 1, sharex=True, figsize=[30, 30])
+
+    for i in range(latents.shape[1]):
+        ax = axes[i]
+        batch = latents[:, i]
+        ax.hist(batch, bins=100)
+        ax.set_title('Latent {}'.format(i + 1))
+        ax.set_xlabel('x')
+        ax.set_ylabel('frequency')
+    plt.savefig(save_to)
+    plt.close()
+
 LUMI_X_LIM = [0.3, 0.55]
 LUMI_Y_LIM = [-0.4, 0.4]
 LUMI_Z_LIM = [.1, .1]
+
 
 BEHAVIOUR_ROOT = '/home/aleksi/hacks/behavioural_ws/behaviroural_vae/behavioural_vae'
 POLICY_ROOT = '/home/aleksi/mujoco_ws/src/motion_planning/rl_log'

@@ -7,7 +7,7 @@ import numpy as np
 import random
 from motion_planning.utils import LUMI_Y_LIM, LUMI_X_LIM, LUMI_Z_LIM
 from motion_planning.utils import create_pose_euler
-from mujoco_ros_control.srv import ChangePose
+from mujoco_ros_control.srv import ChangePose, ChangeCameraParams
 from std_srvs.srv import Empty
 from sensor_msgs.msg import Image
 import cv_bridge
@@ -180,6 +180,17 @@ class SimulationInterface(object):
            print("Reset did not work:" + str(exc))
 
        rospy.sleep(duration)
+
+    def change_camere_params(self, look_at, distance, azimuth, elevation):
+
+       assert(len(look_at) == 3)
+
+       request = rospy.ServiceProxy('lumi_mujoco/change_camera', ChangeCameraParams)
+
+       try:
+           request(look_at[0], look_at[1], look_at[2], distance, azimuth, elevation)
+       except rospy.ServiceException as exc:
+           print("Camera Change did not work:" + str(exc))
 
     def capture_image(self):
 
