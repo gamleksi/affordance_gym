@@ -82,7 +82,7 @@ def load_parameters(model, load_path, model_name):
     model.eval()
 
 
-def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=False, feedforward=False):
+def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=False, feedforward=False, policy_eval=False):
 
     parser = argparse.ArgumentParser(description='MOTION PLANNER')
 
@@ -118,10 +118,14 @@ def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=Fal
 
         parser.add_argument('--num-processes', default=16, type=int)
 
+        parser.add_argument('--fixed-camera', dest='fixed_camera', action='store_true')
+        parser.set_defaults(fixed_camera=False)
+
     if gibson:
 
         parser.add_argument('--g-name', default='rgb_test', type=str)
         parser.add_argument('--g-latent', default=10, type=int)
+        parser.add_argument('--cup-id', default=1, type=int)
 
     if debug:
         parser.add_argument('--dataset-name', default='lumi_rtt_star_v2')
@@ -132,6 +136,11 @@ def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=Fal
        parser.set_defaults(random_goal=False)
        parser.add_argument('--policy-name', type=str, default='example')
        parser.add_argument('--num-steps', default=10, type=int)
+
+    if policy_eval:
+        parser.add_argument('--randomize-all', dest='randomize_all', action='store_true')
+        parser.set_defaults(randomize_all=False)
+
 
 
     parser.add_argument('--debug', dest='debug', action='store_true')
@@ -215,10 +224,14 @@ GIBSON_ROOT = '/home/aleksi/hacks/vae_ws/gibson/gibson'
 
 # Perception parameters
 
-LOOK_AT = [.45, 4.1, -2.8]
-DISTANCE = 6.
+LOOK_AT = [0.45, 0.0, 0.0]
+DISTANCE = 1.1
 AZIMUTH = 90.
-ELEVATION = -35.
+ELEVATION = -38
+
+ELEVATION_EPSILON = 0.5
+AZIMUTH_EPSILON = 0.5
+DISTANCE_EPSILON = 0.05
 
 CUP_X_LIM = [0.0, 0.15]
 CUP_Y_LIM = [-0.20, 0.40]

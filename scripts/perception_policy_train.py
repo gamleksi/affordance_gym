@@ -14,26 +14,71 @@ from behavioural_vae.ros_monitor import ROSTrajectoryVAE
 
 
 
-def load_dataset(perception_name, debug):
+def load_dataset(perception_name, fixed_camera, debug):
 
-    data_path = os.path.join(GIBSON_ROOT, 'log', perception_name, 'mujoco_latents/latents.pkl')
 
-    latents, target_coord = np.load(data_path)
+    data_path = os.path.join(GIBSON_ROOT, 'log', perception_name, 'mujoco_latents')
+    data_files = os.listdir(data_path)
 
-    latents = latents[:, 0, :]
+    # Multiple data packages exist
+    latents = []
+    camera_distances = []
+    azimuths = []
+    elevations = []
+    target_coords = []
 
+    data_files = data_files[:2]
+
+    for file in data_files:
+        dataset = np.load(os.path.join(data_path, file))
+
+        latents.append(dataset[0][:, 0, :]) # Bug fix
+        camera_distances.append(dataset[1])
+        azimuths.append(dataset[2])
+        elevations.append(dataset[3])
+
+        target_coords.append(dataset[5])
+
+
+    # Arrays to numpy
+    latents = np.concatenate(latents)
+    camera_distances = np.concatenate(camera_distances)
+    azimuths = np.concatenate(azimuths)
+    elevations = np.concatenate(elevations)
+    target_coords = np.concatenate(target_coords)
+
+    # Normalization
+    camera_distances = (camera_distances - np.min(camera_distances)) / (np.max(camera_distances) - np.min(camera_distances))
+    azimuths = (azimuths - np.min(azimuths)) / (np.max(azimuths) - np.min(azimuths))
+    elevations = (elevations - np.min(elevations)) / (np.max(elevations) - np.min(elevations))
+
+    if fixed_camera:
+
+        # The first camera params
+        distance = camera_distances[0]
+        azimuth = azimuths[0]
+        elevation = elevations[0]
+
+        fixed_indices = camera_distances == distance
+        fixed_indices = fixed_indices * (elevations == azimuth)
+        fixed_indices = fixed_indices * (azimuths == elevation)
+
+        inputs = latents[fixed_indices]
+        target_coords = target_coords[fixed_indices]
+
+    else:
+        inputs = np.concatenate([latents, camera_distances[:, None], azimuths[:, None], elevations[:, None]], axis=1)
+
+    print(inputs.shape)
     if debug:
-        indices = np.random.random_integers(0, len(latents), 10)
-        latents = latents[indices]
-        target_coord = target_coord[indices]
+        indices = np.random.random_integers(0, inputs.shape[0], 10)
+        inputs = inputs[indices]
+        target_coords = target_coords[indices]
 
-    # Simplifies the dataset
-
-    latents = torch.Tensor(latents)
-    target_coord = torch.Tensor(target_coord)
-
-    return data.TensorDataset(latents, target_coord)
-
+    # To tensor
+    inputs = torch.Tensor(inputs)
+    target_coord = torch.Tensor(target_coords)
+    return data.TensorDataset(inputs, target_coord)
 
 
 def main(args):
@@ -53,15 +98,20 @@ def main(args):
     traj_decoder.eval()
     traj_decoder.to(device)
 
+    # Load data
+    dataset = load_dataset(args.g_name, args.fixed_camera, args.debug)
+
     # Policy
-    policy = Predictor(args.g_latent, args.latent_dim)
+
+    if args.fixed_camera:
+        policy = Predictor(args.g_latent, args.latent_dim)
+    else:
+        policy = Predictor(args.g_latent + 3, args.latent_dim)
+
     policy.to(device)
 
     optimizer = optim.Adam(policy.parameters(), lr=args.lr)
     optimizer.zero_grad()
-
-    # Load data
-    dataset = load_dataset(args.g_name, args.debug)
 
     print("Dataset size", dataset.__len__())
     train_size = int(dataset.__len__() * 0.7)
@@ -89,14 +139,12 @@ def main(args):
         target_poses = []
         latents = []
 
-        for latent_1, target_pose in train_loader:
+        for input, target_pose in train_loader:
 
             # latent1 -> latent2
-            print(latent_1)
-            latent_1, target_pose = latent_1.to(device), target_pose.to(device)
+            latent_1, target_pose = input.to(device), target_pose.to(device)
 
             latent_2 = policy(Variable(latent_1))
-            print(latent_2)
 
             # latent2 -> trajectory
             trajectories = traj_decoder(latent_2)
@@ -108,7 +156,6 @@ def main(args):
             end_joint_pose = trajectories[:, :, -1]
             # Unnormalize
             end_joint_pose = (MAX_ANGLE - MIN_ANGLE) * end_joint_pose + MIN_ANGLE
-            print(end_joint_pose)
 
             # joint pose -> cartesian
             end_pose = end_effector_pose(end_joint_pose, device)

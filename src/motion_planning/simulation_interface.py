@@ -7,7 +7,7 @@ import numpy as np
 import random
 from motion_planning.utils import LUMI_Y_LIM, LUMI_X_LIM, LUMI_Z_LIM
 from motion_planning.utils import create_pose_euler
-from mujoco_ros_control.srv import ChangePose, ChangeCameraParams
+from mujoco_ros_control.srv import ChangeCupPose, ChangeCameraParams
 from std_srvs.srv import Empty
 from sensor_msgs.msg import Image
 import cv_bridge
@@ -158,7 +158,7 @@ class SimulationInterface(object):
         succeed = self.arm_planner.execute(plan)
         return succeed
 
-    def reset(self,duration ):
+    def reset(self, duration):
 
         self.arm_planner.clear_pose_targets()
         reset = rospy.ServiceProxy('lumi_mujoco/reset', Empty)
@@ -169,17 +169,17 @@ class SimulationInterface(object):
 
         rospy.sleep(duration)
 
-    def reset_table(self, x, y, duration):
+    def reset_table(self, x, y, z, object_name):
 
        self.arm_planner.clear_pose_targets()
 
-       reset = rospy.ServiceProxy('lumi_mujoco/reset_table', ChangePose)
+       reset = rospy.ServiceProxy('lumi_mujoco/reset_table', ChangeCupPose)
        try:
-           reset(x, y, 0)
+           reset(object_name, x, y, z)
        except rospy.ServiceException as exc:
            print("Reset did not work:" + str(exc))
 
-       rospy.sleep(duration)
+       rospy.sleep(0)
 
     def change_camere_params(self, look_at, distance, azimuth, elevation):
 
