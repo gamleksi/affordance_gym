@@ -1,0 +1,3 @@
+[submodule "src/gibson"]
+	path = src/gibson
+	url = git@version.aalto.fi:hamalaa8/gibson.git
