@@ -9,7 +9,7 @@ from motion_planning.perception_policy import Predictor
 from behavioural_vae.ros_monitor import ROSTrajectoryVAE
 from gibson.ros_monitor import RosPerceptionVAE
 
-from motion_planning.utils import parse_arguments, GIBSON_ROOT, load_parameters, BEHAVIOUR_ROOT, use_cuda
+from motion_planning.utils import parse_arguments, GIBSON_ROOT, load_parameters, BEHAVIOUR_ROOT, POLICY_ROOT, use_cuda
 from motion_planning.utils import LOOK_AT, DISTANCE, AZIMUTH, ELEVATION, CUP_X_LIM, CUP_Y_LIM
 from motion_planning.utils import ELEVATION_EPSILON, AZIMUTH_EPSILON, DISTANCE_EPSILON
 from motion_planning.monitor import TrajectoryEnv
@@ -20,14 +20,17 @@ def main(args):
     device = use_cuda()
 
     # Trajectory generator
-    # TODO insserst both encoder and decoder to GPU
+    # TODO Currently includes both encoder and decoder to GPU even though only encoder is used.
 
     assert(args.model_index > -1)
-    action_vae = ROSTrajectoryVAE(args.vae_name, args.latent_dim, args.num_actions,
-                                       model_index=args.model_index, num_joints=args.num_joints,  root_path=BEHAVIOUR_ROOT)
+
+    bahavior_model_path = os.path.join(BEHAVIOUR_ROOT, args.vae_name)
+    action_vae = ROSTrajectoryVAE(bahavior_model_path, args.latent_dim, args.num_actions, model_index=args.model_index, num_joints=args.num_joints)
     # pereception
-    # TODO insserst both encoder and decoder to GPU
-    perception = RosPerceptionVAE(args.g_name, args.g_latent, root_path=GIBSON_ROOT)
+    # TODO Currently includes both encoder and decoder to GPU even though only encoder is used.
+
+    gibson_model_path = os.path.join(GIBSON_ROOT, args.g_name)
+    perception = RosPerceptionVAE(gibson_model_path, args.g_latent)
 
     # Policy
 
@@ -39,7 +42,7 @@ def main(args):
 
     policy.to(device)
 
-    policy_path = os.path.join('../policy_log', args.policy_name)
+    policy_path = os.path.join(POLICY_ROOT, args.policy_name)
     load_parameters(policy, policy_path, 'model')
 
     # Simulation interface

@@ -88,7 +88,7 @@ def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=Fal
 
     if behavioural_vae:
 
-        parser.add_argument('--vae-name', default='mse_fc_v1', type=str, help='')
+        parser.add_argument('--vae-name', default='model_v1', type=str, help='')
 
         parser.add_argument('--latent-dim', default=5, type=int, help='') # VAE model determines
         parser.add_argument('--num_joints', default=7, type=int, help='')
@@ -105,7 +105,7 @@ def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=Fal
 
     if policy:
 
-        parser.add_argument('--policy-name', default='example', type=str, help='')
+        parser.add_argument('--policy-name', default='model_v1', type=str, help='')
 
         parser.add_argument('--num-epoch', default=1000, type=int)
 
@@ -123,19 +123,19 @@ def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=Fal
 
     if gibson:
 
-        parser.add_argument('--g-name', default='rgb_test', type=str)
+        parser.add_argument('--g-name', default='rgb_model_v1', type=str)
         parser.add_argument('--g-latent', default=10, type=int)
         parser.add_argument('--cup-id', default=1, type=int)
 
-    if debug:
-        parser.add_argument('--dataset-name', default='lumi_rtt_star_v2')
+#    if debug:
+#        parser.add_argument('--dataset-name', default='lumi_rtt_star_v2')
 
-    if feedforward:
-
-       parser.add_argument('--random-goal', dest='random_goal', action='store_true')
-       parser.set_defaults(random_goal=False)
-       parser.add_argument('--policy-name', type=str, default='example')
-       parser.add_argument('--num-steps', default=10, type=int)
+#    if feedforward:
+#
+#       parser.add_argument('--random-goal', dest='random_goal', action='store_true')
+#       parser.set_defaults(random_goal=False)
+#       parser.add_argument('--policy-name', type=str, default='example')
+#       parser.add_argument('--num-steps', default=10, type=int)
 
     if policy_eval:
         parser.add_argument('--randomize-all', dest='randomize_all', action='store_true')
@@ -216,11 +216,9 @@ LUMI_X_LIM = [0.3, 0.55]
 LUMI_Y_LIM = [-0.4, 0.4]
 LUMI_Z_LIM = [.1, .1]
 
-
-BEHAVIOUR_ROOT = '/home/aleksi/hacks/behavioural_ws/behaviroural_vae/behavioural_vae'
-POLICY_ROOT = '/home/aleksi/mujoco_ws/src/motion_planning/rl_log'
-GIBSON_ROOT = '/home/aleksi/hacks/vae_ws/gibson/gibson'
-
+BEHAVIOUR_ROOT = '/home/aleksi/mujoco_ws/src/motion_planning/src/behavioural_vae/models'
+POLICY_ROOT = '/home/aleksi/mujoco_ws/src/motion_planning/policy_models'
+GIBSON_ROOT = '/home/aleksi/mujoco_ws/src/motion_planning/src/gibson/perception_results'
 
 # Perception parameters
 
