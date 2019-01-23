@@ -1,3 +1,6 @@
 [submodule "src/gibson"]
 	path = src/gibson
 	url = git@version.aalto.fi:hamalaa8/gibson.git
+[submodule "src/behavioural_layer"]
+	path = src/behavioural_vae
+	url = git@version.aalto.fi:hamalaa8/behavioural_layer.git
