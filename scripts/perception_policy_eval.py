@@ -21,6 +21,8 @@ def main(args):
 
     # Trajectory generator
     # TODO insserst both encoder and decoder to GPU
+
+    assert(args.model_index > -1)
     action_vae = ROSTrajectoryVAE(args.vae_name, args.latent_dim, args.num_actions,
                                        model_index=args.model_index, num_joints=args.num_joints,  root_path=BEHAVIOUR_ROOT)
     # pereception
@@ -76,7 +78,6 @@ def main(args):
 
         # Image -> Latent1
         latent1 = perception.get_latent(image)
-
 
         if not(args.fixed_camera):
             n_camera_distance = (camera_distance - (DISTANCE - DISTANCE_EPSILON)) / (DISTANCE_EPSILON * 2)

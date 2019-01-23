@@ -27,8 +27,6 @@ def load_dataset(perception_name, fixed_camera, debug):
     elevations = []
     target_coords = []
 
-    data_files = data_files[:2]
-
     for file in data_files:
         dataset = np.load(os.path.join(data_path, file))
 
@@ -120,7 +118,7 @@ def main(args):
     trainset, testset = data.random_split(dataset, (train_size, test_size))
 
     train_loader = data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=args.num_processes)
-    test_loader = data.DataLoader(testset, batch_size=testset.__len__())
+    test_loader = data.DataLoader(testset, batch_size=10000)
 
     best_val = np.inf
 
