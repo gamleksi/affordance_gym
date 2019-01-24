@@ -6,6 +6,8 @@ from behavioural_vae.utils import smooth_trajectory, MAX_ANGLE, MIN_ANGLE
 import os
 import numpy as np
 import rospy
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import argparse
 
