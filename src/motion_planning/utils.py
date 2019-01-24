@@ -212,9 +212,9 @@ def plot_latent_distributions(latents, save_to):
 
 
 # These values work only in the regular robot env (base link different in th robot_table env)
-LUMI_X_LIM = [0.3, 0.55]
-LUMI_Y_LIM = [-0.4, 0.4]
-LUMI_Z_LIM = [.1, .1]
+LUMI_X_LIM = [0.4, 0.8]
+LUMI_Y_LIM = [-0.20, 0.20]
+LUMI_Z_LIM = [.2, .2]
 
 BEHAVIOUR_ROOT = '/home/aleksi/mujoco_ws/src/motion_planning/src/behavioural_vae/models'
 POLICY_ROOT = '/home/aleksi/mujoco_ws/src/motion_planning/policy_models'
@@ -222,13 +222,13 @@ GIBSON_ROOT = '/home/aleksi/mujoco_ws/src/motion_planning/src/gibson/perception_
 
 # Perception parameters
 LOOK_AT = [0.70, 0.0, 0.0]
-DISTANCE = 1.3
-AZIMUTH = 90.
-ELEVATION = -45
+DISTANCE = 1.2
+AZIMUTH = -90.
+ELEVATION = -30
 
 ELEVATION_EPSILON = 0.5
 AZIMUTH_EPSILON = 0.5
 DISTANCE_EPSILON = 0.05
 
-CUP_X_LIM = [0.4, 0.55]
-CUP_Y_LIM = [-0.30, 0.30]
+CUP_X_LIM = [0.4, 0.8]
+CUP_Y_LIM = [-0.20, 0.20]
