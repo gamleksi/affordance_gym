@@ -221,15 +221,14 @@ POLICY_ROOT = '/home/aleksi/mujoco_ws/src/motion_planning/policy_models'
 GIBSON_ROOT = '/home/aleksi/mujoco_ws/src/motion_planning/src/gibson/perception_results'
 
 # Perception parameters
-
-LOOK_AT = [0.45, 0.0, 0.0]
-DISTANCE = 1.1
+LOOK_AT = [0.70, 0.0, 0.0]
+DISTANCE = 1.3
 AZIMUTH = 90.
-ELEVATION = -38
+ELEVATION = -45
 
 ELEVATION_EPSILON = 0.5
 AZIMUTH_EPSILON = 0.5
 DISTANCE_EPSILON = 0.05
 
-CUP_X_LIM = [0.0, 0.15]
-CUP_Y_LIM = [-0.20, 0.40]
+CUP_X_LIM = [0.4, 0.55]
+CUP_Y_LIM = [-0.30, 0.30]

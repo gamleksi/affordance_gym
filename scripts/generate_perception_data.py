@@ -5,7 +5,7 @@ from PIL import Image
 import pickle
 
 from motion_planning.utils import parse_arguments, GIBSON_ROOT, LOOK_AT, DISTANCE, AZIMUTH, ELEVATION, CUP_X_LIM, CUP_Y_LIM
-from motion_planning.utils import ELEVATION_EPSILON, AZIMUTH_EPSILON, DISTANCE_EPSILON
+from motion_planning.utils import ELEVATION_EPSILON, AZIMUTH_EPSILON, DISTANCE_EPSILON, POLICY_ROOT
 from motion_planning.simulation_interface import SimulationInterface
 from gibson.tools import affordance_to_array
 from gibson.ros_monitor import RosPerceptionVAE
@@ -34,30 +34,22 @@ def sample_visualize(image, affordance, model_path, id):
     plt.close(fig)
 
 
-class Experiment:
-
-    def __init__(self, model, planner):
-        self.model = model
-        self.planner = planner
-        self.iter = 0
-
-    def do(self, x, y):
-        planner.reset_table(x, y, 0)
-        image_arr = self.planner.capture_image()
-        image = Image.fromarray(image_arr)
-        model.get_latent(image)
-        affordance, sample = self.model.reconstruct(image)
-        sample_visualize(sample, affordance, 'gibson_test', self.iter)
-        self.iter += 1
+def crop_top(image):
+    width, height = image.size
+    left = 0
+    top = height - 160
+    right = width
+    bottom = height
+    return image.crop((left, top, right, bottom))
 
 
 if __name__  == '__main__':
 
     args = parse_arguments(gibson=True)
-    model = RosPerceptionVAE(args.g_name, args.g_latent, root_path=GIBSON_ROOT)
+    model = RosPerceptionVAE(os.path.join(GIBSON_ROOT, args.g_name), args.g_latent)
 
     if args.debug:
-        model_path = os.path.join('debug', args.g_name)
+        model_path = os.path.join(POLICY_ROOT, 'debug', 'perception', args.g_name)
         x_steps = 3
         y_steps = 3
     else:
@@ -71,10 +63,8 @@ if __name__  == '__main__':
 
     planner.change_camere_params(LOOK_AT, DISTANCE, AZIMUTH, ELEVATION)
 
-    worker = Experiment(model, planner)
-
     if (args.debug):
-        steps = 1
+        steps = 2
         cup_id_steps = 10
     else:
         steps = 5
