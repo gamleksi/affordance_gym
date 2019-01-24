@@ -130,8 +130,8 @@ if __name__ == '__main__':
         rospy.on_shutdown(trajectory_saver.save)
         i = 0
 
-        for x in np.linspace(LUMI_X_LIM[0], LUMI_X_LIM[1], 50):
-          for y in np.linspace(LUMI_Y_LIM[0], LUMI_Y_LIM[1], 160):
+        for x in np.linspace(LUMI_X_LIM[0], LUMI_X_LIM[1], 100):
+          for y in np.linspace(LUMI_Y_LIM[0], LUMI_Y_LIM[1], 100):
               plan = simulation_interface.plan_end_effector_to_position(x_p=x, y_p=y, z_p=LUMI_Z_LIM[0])
               if plan:
                   trajectory_saver.add_trajectory(plan, (x, y, LUMI_Z_LIM[0]))

@@ -212,9 +212,9 @@ def plot_latent_distributions(latents, save_to):
 
 
 # These values work only in the regular robot env (base link different in th robot_table env)
-LUMI_X_LIM = [0.4, 0.8]
+LUMI_X_LIM = [0.4, 0.75]
 LUMI_Y_LIM = [-0.20, 0.20]
-LUMI_Z_LIM = [.2, .2]
+LUMI_Z_LIM = [.3, .3]
 
 BEHAVIOUR_ROOT = '/home/aleksi/mujoco_ws/src/motion_planning/src/behavioural_vae/models'
 POLICY_ROOT = '/home/aleksi/mujoco_ws/src/motion_planning/policy_models'
@@ -230,5 +230,5 @@ ELEVATION_EPSILON = 0.5
 AZIMUTH_EPSILON = 0.5
 DISTANCE_EPSILON = 0.05
 
-CUP_X_LIM = [0.4, 0.8]
+CUP_X_LIM = [0.4, 0.75]
 CUP_Y_LIM = [-0.20, 0.20]
