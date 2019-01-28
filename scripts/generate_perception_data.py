@@ -53,7 +53,7 @@ if __name__  == '__main__':
         x_steps = 3
         y_steps = 3
     else:
-        model_path = os.path.join(GIBSON_ROOT, 'log', args.g_name)
+        model_path = os.path.join(GIBSON_ROOT, args.g_name)
         x_steps = 20
         y_steps = 60
 
@@ -97,38 +97,38 @@ if __name__  == '__main__':
         elevation = camera_params[5]
         planner.change_camere_params(lookat_at, distance, azimuth, elevation)
 
-        # for cup_id in range(1, cup_id_steps + 1):
+        for cup_id in range(args.cup_id * 2 + 1, (args.cup_id + 1) * 2 + 1):
 
-        cup_name = 'cup{}'.format(args.cup_id)
+           cup_name = 'cup{}'.format(cup_id)
 
-        for x in np.linspace(CUP_X_LIM[0], CUP_X_LIM[1], x_steps):
+           for x in np.linspace(CUP_X_LIM[0], CUP_X_LIM[1], x_steps):
 
-            for y in np.linspace(CUP_Y_LIM[0], CUP_Y_LIM[1], y_steps):
+               for y in np.linspace(CUP_Y_LIM[0], CUP_Y_LIM[1], y_steps):
 
-                # Change pose of the cup and get an image sample
-                planner.reset_table(x, y, 0, cup_name)
-                image_arr = planner.capture_image()
-                image = Image.fromarray(image_arr)
+                   # Change pose of the cup and get an image sample
+                   planner.reset_table(x, y, 0, cup_name)
+                   image_arr = planner.capture_image()
+                   image = Image.fromarray(image_arr)
 
-                # Get latent1
-                latent = model.get_latent(image)
-                latent = latent.detach().cpu().numpy()
+                   # Get latent1
+                   latent = model.get_latent(image)
+                   latent = latent.detach().cpu().numpy()
 
-                # Store samples
-                cup_positions.append((x, y))
-                latents.append(latent)
-                container_distances.append(distance)
-                container_azimuths.append(azimuth)
-                container_elevations.append(elevation)
-                cup_ids.append(args.cup_id)
+                   # Store samples
+                   cup_positions.append((x, y))
+                   latents.append(latent)
+                   container_distances.append(distance)
+                   container_azimuths.append(azimuth)
+                   container_elevations.append(elevation)
+                   cup_ids.append(cup_id)
 
-                # Visualize affordance results
-                if args.debug:
-                    affordance, sample = model.reconstruct(image)
-                    sample_visualize(sample, affordance, model_path, idx)
+                   # Visualize affordance results
+                   if args.debug:
+                       affordance, sample = model.reconstruct(image)
+                       sample_visualize(sample, affordance, model_path, idx)
 
-                idx += 1
-                print("sample: {} / {}".format(idx, (steps ** 3) * x_steps * y_steps * cup_id_steps))
+                   idx += 1
+                   print("sample: {} / {}".format(idx, (steps ** 3) * x_steps * y_steps * cup_id_steps))
 
     # Save training samples
     save_path = os.path.join(model_path, 'mujoco_latents')
