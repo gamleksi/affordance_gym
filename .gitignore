@@ -125,3 +125,4 @@ rl_log/*
 policy_log/
 trajectory_data/
 mujoco_perception_results/
+policy_models/
