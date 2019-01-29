@@ -4,6 +4,8 @@ import argparse
 import tf
 import geometry_msgs.msg
 import torch
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 
 def create_pose(x_p, y_p, z_p, x_o, y_o, z_o, w_o):
@@ -190,8 +192,8 @@ def plot_loss(train, val, title, save_to):
 
 def plot_scatter(constructed, targets, save_to):
     fig = plt.figure()
-    plt.scatter(targets[:, 0], targets[:, 1], label='targets')
-    plt.scatter(constructed[:, 0], constructed[:, 1], label='constructed')
+    plt.scatter(targets[:, 0], targets[:, 1], label='targets', c='r')
+    plt.scatter(constructed[:, 0], constructed[:, 1], label='constructed', c='b')
     plt.legend()
     plt.savefig(save_to)
     plt.close()
