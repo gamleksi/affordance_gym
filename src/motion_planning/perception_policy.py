@@ -9,9 +9,9 @@ class Predictor(nn.Module):
 
         super(Predictor, self).__init__()
 
-        self.fc1 = nn.Linear(input_size, 64)
-        self.fc2 = nn.Linear(64, 64)
-        self.fc3 = nn.Linear(64, output_size)
+        self.fc1 = nn.Linear(input_size, 128)
+        self.fc2 = nn.Linear(128, 128)
+        self.fc3 = nn.Linear(128, output_size)
 
         self.relu = nn.ReLU()
 
@@ -28,7 +28,7 @@ class Predictor(nn.Module):
 
         for m in self.modules():
             if isinstance(m, nn.Linear):
-                torch.nn.init.normal_(m.weight, std=1e-1)
+                torch.nn.init.normal_(m.weight, std=1e-2)
                 if m.bias is not None:
                     torch.nn.init.constant_(m.bias, 0)
 
@@ -77,9 +77,11 @@ def end_effector_pose(thetas, device):
 
     T = torch.zeros([thetas.shape[0], 4, 4]).to(device)
     T[:, :, :] = torch.eye(4).to(device)
-    T[:, 0, 3] = -0.4
-    T[:, 1, 3] = 0.15
-    T[:, 2, 3] = 0
+
+    # Base link coordinates
+    T[:, 0, 3] = 0.0
+    T[:, 1, 3] = 0.0
+    T[:, 2, 3] = 0.0
 
     for idx in range(0, len(alphas) - 1):
         T_i = DH(thetas[:, idx], ds[idx], rs[idx], alphas[idx], device)

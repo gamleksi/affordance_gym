@@ -16,27 +16,29 @@ from behavioural_vae.ros_monitor import ROSTrajectoryVAE
 
 def load_dataset(perception_name, fixed_camera, debug):
 
-
-    data_path = os.path.join(GIBSON_ROOT, 'log', perception_name, 'mujoco_latents')
+    data_path = os.path.join(GIBSON_ROOT, perception_name, 'mujoco_latents')
     data_files = os.listdir(data_path)
 
+    if debug:
+        data_files = [data_files[0]]
+
+    print("Loading: ", data_files)
     # Multiple data packages exist
     latents = []
     camera_distances = []
     azimuths = []
     elevations = []
     target_coords = []
+    cup_ids = []
 
     for file in data_files:
         dataset = np.load(os.path.join(data_path, file))
-
         latents.append(dataset[0][:, 0, :]) # Bug fix
         camera_distances.append(dataset[1])
         azimuths.append(dataset[2])
         elevations.append(dataset[3])
-
+        cup_ids.append(dataset[4])
         target_coords.append(dataset[5])
-
 
     # Arrays to numpy
     latents = np.concatenate(latents)
@@ -44,6 +46,7 @@ def load_dataset(perception_name, fixed_camera, debug):
     azimuths = np.concatenate(azimuths)
     elevations = np.concatenate(elevations)
     target_coords = np.concatenate(target_coords)
+    cup_ids = np.concatenate(cup_ids)
 
     # Normalization
     camera_distances = (camera_distances - np.min(camera_distances)) / (np.max(camera_distances) - np.min(camera_distances))
@@ -68,8 +71,9 @@ def load_dataset(perception_name, fixed_camera, debug):
         inputs = np.concatenate([latents, camera_distances[:, None], azimuths[:, None], elevations[:, None]], axis=1)
 
     print(inputs.shape)
+
     if debug:
-        indices = np.random.random_integers(0, inputs.shape[0], 10)
+        indices = np.random.random_integers(0, inputs.shape[0], 100)
         inputs = inputs[indices]
         target_coords = target_coords[indices]
 
@@ -88,8 +92,8 @@ def main(args):
 
     assert(args.model_index > 0)
 
-    action_vae = ROSTrajectoryVAE(args.vae_name, args.latent_dim, args.num_actions,
-                                       model_index=args.model_index, num_joints=args.num_joints,  root_path=BEHAVIOUR_ROOT)
+    action_vae = ROSTrajectoryVAE(os.path.join(BEHAVIOUR_ROOT, args.vae_name), args.latent_dim, args.num_actions,
+                                       model_index=args.model_index, num_joints=args.num_joints)
 
     # Trajectory generator
     traj_decoder = action_vae.model.decoder
