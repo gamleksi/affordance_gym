@@ -68,7 +68,8 @@ class TrajectoryEnv(object):
         # does the imitation
 
         result = self.get_imitation(plan)
-        result_plan = self.msg_handler.build_message(self.unnormalize_positions(result))
+        positions = self.unnormalize_positions(result)
+        result_plan = self.msg_handler.build_message(positions)
         self.env_interface.do_plan(result_plan)
 
         return result, self.env_interface.current_joint_values()
@@ -93,7 +94,8 @@ class TrajectoryEnv(object):
         # Executes a trajectory based on a given latent
 
         normalized_positions = self.get_latent_imitation(latent)
-        plan = self.msg_handler.build_message(self.unnormalize_positions(normalized_positions))
+        positions = self.unnormalize_positions(normalized_positions)
+        plan = self.msg_handler.build_message(positions)
         self.env_interface.do_plan(plan)
         return normalized_positions, self.env_interface.current_pose()
 

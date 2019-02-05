@@ -4,6 +4,7 @@ import argparse
 import tf
 import geometry_msgs.msg
 import torch
+
 import matplotlib as mpl
 mpl.use('Agg')
 import matplotlib.pyplot as plt
@@ -43,6 +44,7 @@ def create_pose(x_p, y_p, z_p, x_o, y_o, z_o, w_o):
 
 
 def create_pose_euler(x_p, y_p, z_p, roll_rad, pitch_rad, yaw_rad):
+
     """Creates a pose using euler angles
 
     Creates a pose for use with MoveIt! using XYZ coordinates and RPY
@@ -70,9 +72,6 @@ def create_pose_euler(x_p, y_p, z_p, roll_rad, pitch_rad, yaw_rad):
             x_p, y_p, z_p,
             quaternion[0], quaternion[1],
             quaternion[2], quaternion[3])
-
-
-
 
 def print_pose(pose, tag='Pose'):
     print("{}: x: {}, y: {}, z: {}".format(tag, pose[0], pose[1], pose[2]))

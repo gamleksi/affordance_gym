@@ -25,7 +25,8 @@ def main(args):
     assert(args.model_index > -1)
 
     bahavior_model_path = os.path.join(BEHAVIOUR_ROOT, args.vae_name)
-    action_vae = ROSTrajectoryVAE(bahavior_model_path, args.latent_dim, args.num_actions, model_index=args.model_index, num_joints=args.num_joints)
+    action_vae = ROSTrajectoryVAE(bahavior_model_path, args.latent_dim, args.num_actions,
+                                  model_index=args.model_index, num_joints=args.num_joints)
     # pereception
     # TODO Currently includes both encoder and decoder to GPU even though only encoder is used.
 
@@ -105,7 +106,7 @@ def main(args):
 
         reward = np.linalg.norm(np.array([x, y]) - end_pose)
         rewards.append(reward)
-        env.reset_environment(duration=2.0)
+        # env.reset_environment(duration=3.0)
 
         print('Reward: {}'.format(reward))
         print("goal", x, y)

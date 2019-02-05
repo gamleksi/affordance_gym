@@ -104,7 +104,6 @@ def main(args):
     dataset = load_dataset(args.g_name, args.fixed_camera, args.debug)
 
     # Policy
-
     if args.fixed_camera:
         policy = Predictor(args.g_latent, args.latent_dim)
     else:
