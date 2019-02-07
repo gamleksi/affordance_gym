@@ -83,7 +83,7 @@ def load_parameters(model, load_path, model_name):
     model.eval()
 
 
-def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=False, feedforward=False, policy_eval=False):
+def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=False, feedforward=False, policy_eval=False, kinect=False):
 
     parser = argparse.ArgumentParser(description='MOTION PLANNER')
 
@@ -142,6 +142,10 @@ def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=Fal
         parser.add_argument('--randomize-all', dest='randomize_all', action='store_true')
         parser.set_defaults(randomize_all=False)
 
+    if kinect:
+        parser.add_argument('--log', dest='log', action='store_true')
+        parser.set_defaults(log=False)
+        parser.add_argument('--log-name', default='kinect_example', type=str)
 
 
     parser.add_argument('--debug', dest='debug', action='store_true')
@@ -149,6 +153,15 @@ def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=Fal
     args = parser.parse_args()
     return args
 
+
+#    print("Give the position of a cup:")
+#    x = float(raw_input("Enter x: "))
+#    y = float(raw_input("Enter y: "))
+#  ('camera_pose', [0.729703198019277, 0.9904542035333381, 0.5861775350680969])
+#  ('Kinect lookat', array([0.71616937, -0.03126261, 0.]))
+#  ('distance', 1.1780036104266332)
+#  ('azimuth', -90.75890510585465)
+#   ('kinect_elevation', -29.841508670508976)
 
 
 def use_cuda():
@@ -223,12 +236,12 @@ GIBSON_ROOT = '/home/aleksi/mujoco_ws/src/motion_planning/src/gibson/perception_
 
 # Perception parameters
 LOOK_AT = [0.70, 0.0, 0.0]
-DISTANCE = 1.2
+DISTANCE = 1.16
 AZIMUTH = -90.
 ELEVATION = -30
 
-ELEVATION_EPSILON = 0.5
-AZIMUTH_EPSILON = 0.5
+ELEVATION_EPSILON = 2.
+AZIMUTH_EPSILON = 2.
 DISTANCE_EPSILON = 0.05
 
 CUP_X_LIM = [0.4, 0.75]

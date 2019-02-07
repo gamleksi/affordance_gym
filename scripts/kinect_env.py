@@ -1,4 +1,5 @@
 import os
+import csv
 import numpy as np
 from PIL import Image
 import torch
@@ -20,11 +21,10 @@ from PyInquirer import prompt, style_from_dict, Token
 import rospy
 
 
-def sample_visualize(image, affordance, model_path, id):
+def sample_visualize(image, affordance, sample_path, id):
 
     image = np.transpose(image, (1, 2, 0))
 
-    sample_path = os.path.join(model_path,'mujoco_samples')
     if not os.path.exists(sample_path):
         os.makedirs(sample_path)
 
@@ -42,12 +42,30 @@ def sample_visualize(image, affordance, model_path, id):
     plt.close(fig)
 
 
+style = style_from_dict({
+    Token.QuestionMark: '#E91E63 bold',
+    Token.Selected: '#673AB7 bold',
+    Token.Instruction: '',  # default
+    Token.Answer: '#2196f3 bold',
+    Token.Question: '',
+})
+
+
 def change_camera_pose(sim):
     # Sim object reference
 
-    camera_found = 0
+    camera_found = False
 
-    while (camera_found < 1):
+    camera_questions = [
+        {
+            'type': 'confirm',
+            'name': 'camera_found',
+            'message': '',
+            'default': False
+        }
+    ]
+
+    while not(camera_found):
 
         # Kinect parameters TODO
         cam_position, quaternions = sim.kinect_camera_pose()
@@ -79,7 +97,8 @@ def change_camera_pose(sim):
         print("distance", kinect_distance)
         print("azimuth", kinect_azimuth)
         print("kinect_elevation", kinect_elevation)
-        camera_found = input("Keep camera 1 pose, change camera pose 0")
+        answer = prompt(camera_questions, style=style)
+        camera_found = answer.get('camera_found')
 
     # Normalized Camera Params
     n_camera_distance = (kinect_distance - (DISTANCE - DISTANCE_EPSILON)) / (DISTANCE_EPSILON * 2)
@@ -87,16 +106,16 @@ def change_camera_pose(sim):
     n_elevation = (kinect_elevation - (ELEVATION - ELEVATION_EPSILON)) / (ELEVATION_EPSILON * 2)
     camera_params = [n_camera_distance, n_azimuth, n_elevation]
 
-    return camera_params
+    return camera_params, (kinect_distance, kinect_azimuth, kinect_elevation, roll, kinect_lookat)
 
 
-style = style_from_dict({
-    Token.QuestionMark: '#E91E63 bold',
-    Token.Selected: '#673AB7 bold',
-    Token.Instruction: '',  # default
-    Token.Answer: '#2196f3 bold',
-    Token.Question: '',
-})
+def crop_top(image):
+    width, height = image.size
+    left = 0
+    top = 21
+    right = width
+    bottom = height
+    return image.crop((left, top, right, bottom))
 
 
 def main(args):
@@ -126,7 +145,7 @@ def main(args):
     sim = SimulationInterface(arm_name='lumi_arm')
     sim.reset(duration=2.0)
 
-    camera_params = change_camera_pose(sim)
+    camera_params, log_cam_params = change_camera_pose(sim)
 
     env = TrajectoryEnv(action_vae, sim, args.num_actions, num_joints=args.num_joints, trajectory_duration=0.5)
 
@@ -135,32 +154,72 @@ def main(args):
             'type': 'list',
             'name': 'run',
             'message': 'Do you want to run a new experiment (y: yes, yc: yes and a change camera pose, n: no)?',
-            'default': ['y', 'yc', 'n']
+            'choices': ['y', 'yc', 'n']
         }
     ]
+
+    save_path = os.path.join('../kinect_experiments', args.log_name)
+
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
 
     print("Running...")
     run_experiment = True
     change_camera = False
 
     i = 0
-    kinect_service = '/camera/rgb/image_raw'
+    kinect_service = '/camera/rgb/image_raw' # TODO rectified service?
+
+    if args.log:
+
+        log_path = os.path.join(save_path, 'cup_log.csv')
+
+        if not(os.path.exists(os.path.join(save_path, 'inputs'))):
+            os.makedirs(os.path.join(save_path, 'inputs'))
+
+            f = open(log_path, 'w')
+            writer = csv.writer(f)
+            writer.writerow(['cup_type', 'cup_x', 'cup_y', 'end_pose_x', 'end_pose_y',
+                     'distance', 'azimuth', 'elevation', 'roll',
+                     'kinect_lookat_x', 'kinect_lookat_y', 'kinect_lookat_z'])
+            f.close()
+        else:
+            i = len(os.listdir(os.path.join(save_path, 'inputs')))
 
     while run_experiment:
 
         if change_camera:
-            camera_params = change_camera_pose()
+            camera_params, log_cam_params = change_camera_pose()
+
+        if args.log:
+            cup_questions = [
+                {
+                    'type': 'input',
+                    'name': 'cup_type',
+                    'message': 'What is the cup type?'
+                },
+                {
+                    'type': 'input',
+                    'name': 'x_pose',
+                    'message': 'X pose of the cup?'
+                },
+                {
+                    'type': 'input',
+                    'name': 'y_pose',
+                    'message': 'Y pose of the cup?'
+                }
+            ]
+            cup_answers = prompt(cup_questions)
 
         image_arr = sim.capture_image(kinect_service)
         image = Image.fromarray(image_arr)
 
         # For visualization
-        affordance, sample = perception.reconstruct(image) # TODO sample visualize
+        affordance, sample = perception.reconstruct(crop_top(image)) # TODO sample visualize
 
-        sample_visualize(sample, affordance, 'kinect_samples', i)
 
         # Image -> Latent1
-        latent1 = perception.get_latent(image)
+        latent1 = perception.get_latent(crop_top(image))
 
         camera_input = Variable(torch.Tensor(camera_params).to(device))
         camera_input = camera_input.unsqueeze(0)
@@ -180,8 +239,25 @@ def main(args):
         sim.reset_table(end_pose[0], end_pose[1], 0.0, 'box2')
         i += 1
 
-        answers = prompt(app_questions, style=style)
+        if args.log:
 
+            cup_x = float(cup_answers.get('x_pose'))
+            cup_y = float(cup_answers.get('y_pose'))
+            cup_type = str(cup_answers.get('cup_type'))
+
+            print('distance error', np.linalg.norm(np.array([cup_x, cup_y]) - end_pose))
+
+            f = open(log_path, 'a')
+            writer = csv.writer(f)
+            writer.writerow([cup_type, cup_x, cup_y, end_pose[0], end_pose[1],
+               log_cam_params[0], log_cam_params[1], log_cam_params[2], log_cam_params[3],
+               log_cam_params[4][0], log_cam_params[4][1], log_cam_params[4][2]])
+            f.close()
+
+            image.save(os.path.join(save_path, 'inputs', 'sample_{}.png'.format(i)))
+
+        sample_visualize(sample, affordance, os.path.join(save_path, 'kinect_results'), i)
+        answers = prompt(app_questions, style=style)
         if answers.get("run") == "y":
             run_experiment = True
             change_camera = False
@@ -193,17 +269,6 @@ def main(args):
             change_camera = False
 
 
-#    print("Give the position of a cup:")
-#    x = float(raw_input("Enter x: "))
-#    y = float(raw_input("Enter y: "))
-#  ('camera_pose', [0.729703198019277, 0.9904542035333381, 0.5861775350680969])
-#  ('Kinect lookat', array([0.71616937, -0.03126261, 0.]))
-#  ('distance', 1.1780036104266332)
-#  ('azimuth', -90.75890510585465)
-#   ('kinect_elevation', -29.841508670508976)
-
-
-
 if __name__ == '__main__':
-    args = parse_arguments(behavioural_vae=True, gibson=True, policy=True, policy_eval=True)
+    args = parse_arguments(behavioural_vae=True, gibson=True, policy=True, policy_eval=True, kinect=True)
     main(args)

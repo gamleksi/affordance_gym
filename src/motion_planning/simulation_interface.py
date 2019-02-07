@@ -171,7 +171,7 @@ class SimulationInterface(object):
 
         rospy.sleep(duration)
 
-    def reset_table(self, x, y, z, object_name):
+    def reset_table(self, x, y, z, object_name, duration=5.0):
 
        self.arm_planner.clear_pose_targets()
 
@@ -181,7 +181,7 @@ class SimulationInterface(object):
        except rospy.ServiceException as exc:
            print("Reset did not work:" + str(exc))
 
-       rospy.sleep(5.0)
+       rospy.sleep(duration)
 
     def change_camere_params(self, look_at, distance, azimuth, elevation):
 
@@ -208,7 +208,7 @@ class SimulationInterface(object):
     def kinect_camera_pose(self):
 
         listener = tf.TransformListener()
-        rospy.sleep(3)
+        # rospy.sleep(3)
         try:
             listener.waitForTransform('/base_link', '/camera_rgb_frame', rospy.Time(0), rospy.Duration(5))
             (trans, rot) = listener.lookupTransform('/base_link', '/camera_rgb_frame', rospy.Time(0))
@@ -216,6 +216,7 @@ class SimulationInterface(object):
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
             print(e)
             return None, None
+
 
 from moveit_msgs.msg import RobotTrajectory, genpy
 from moveit_msgs.msg import _RobotTrajectory
