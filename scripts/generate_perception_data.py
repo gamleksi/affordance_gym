@@ -6,18 +6,20 @@ from PIL import Image
 import pickle
 
 from motion_planning.utils import parse_arguments, GIBSON_ROOT, LOOK_AT, DISTANCE, AZIMUTH, ELEVATION, CUP_X_LIM, CUP_Y_LIM
-from motion_planning.utils import ELEVATION_EPSILON, AZIMUTH_EPSILON, DISTANCE_EPSILON, POLICY_ROOT
+from motion_planning.utils import ELEVATION_EPSILON, AZIMUTH_EPSILON, DISTANCE_EPSILON, POLICY_ROOT, LOOK_AT_EPSILON, NO_CUP_SHOWN_POSE
 from motion_planning.simulation_interface import SimulationInterface
 from gibson.tools import affordance_to_array
 from gibson.ros_monitor import RosPerceptionVAE
 import itertools
 
 
+NUM_RANDOM_OBJECTS = 15
+
 def sample_visualize(image, affordance, model_path, id):
 
     image = np.transpose(image, (1, 2, 0))
 
-    sample_path = os.path.join(model_path,'mujoco_samples')
+    sample_path = os.path.join(model_path, 'mujoco_samples')
     if not os.path.exists(sample_path):
         os.makedirs(sample_path)
 
@@ -39,7 +41,7 @@ if __name__  == '__main__':
 
     rospy.init_node('generate_perception', anonymous=True)
 
-    args = parse_arguments(gibson=True)
+    args = parse_arguments(gibson=True, )
     model = RosPerceptionVAE(os.path.join(GIBSON_ROOT, args.g_name), args.g_latent)
 
     if args.debug:
@@ -57,14 +59,14 @@ if __name__  == '__main__':
     planner.change_camere_params(LOOK_AT, DISTANCE, AZIMUTH, ELEVATION)
 
     if (args.debug):
-        steps = 2
+        steps = 1
         cup_id_steps = 1
     else:
         steps = 5
         cup_id_steps = 10
 
-    lookat_x_values = LOOK_AT[0] + np.linspace(-0.05, 0.05, steps)
-    lookat_y_values = LOOK_AT[1] + np.linspace(-0.05, 0.05, steps)
+    lookat_x_values = LOOK_AT[0] + np.linspace(-LOOK_AT_EPSILON, LOOK_AT_EPSILON, steps)
+    lookat_y_values = LOOK_AT[1] + np.linspace(-LOOK_AT_EPSILON, LOOK_AT_EPSILON, steps)
 
     distances = DISTANCE + np.linspace(-DISTANCE_EPSILON, DISTANCE_EPSILON, steps)
     elevations = ELEVATION + np.linspace(-ELEVATION_EPSILON, ELEVATION_EPSILON, steps)
@@ -96,45 +98,85 @@ if __name__  == '__main__':
         print(elevation)
 
         planner.change_camere_params(lookat, distance, azimuth, elevation)
+        if (args.clutter_env):
 
-        if args.debug:
-            cup_id_range = range(1, 2)
+            for i in range(10):
+
+                num_objects = np.random.randint(2, 6)
+                random_objects = np.random.choice(NUM_RANDOM_OBJECTS, num_objects) + 1
+
+                # Set random object on the table
+                for obj_id in random_objects:
+                    x = np.random.uniform(CUP_X_LIM[0], CUP_X_LIM[1])
+                    y = np.random.uniform(CUP_Y_LIM[0], CUP_Y_LIM[1])
+                    obj_name = 'random{}'.format(obj_id)
+                    planner.change_object_position(x, y, 0.0, obj_name, duration=0)
+
+                image_arr = planner.capture_image()
+                image = Image.fromarray(image_arr)
+
+                # Get latent1
+                latent = model.get_latent(image)
+                latent = latent.detach().cpu().numpy()
+
+                # Store samples
+                cup_positions.append((NO_CUP_SHOWN_POSE[0], NO_CUP_SHOWN_POSE[1]))
+                latents.append(latent)
+                container_distances.append(distance)
+                container_azimuths.append(azimuth)
+                container_elevations.append(elevation)
+                cup_ids.append(0)
+                lookat_points.append(lookat)
+
+                if args.debug:
+                    affordance, sample = model.reconstruct(image)
+                    sample_visualize(sample, affordance, model_path, i)
+
+                # Remove selected objects from the table
+                for obj_id in random_objects:
+                    obj_name = 'random{}'.format(obj_id)
+                    planner.change_object_position(10, 12 + obj_id, 0.0, obj_name, duration=0)
+
         else:
-            cup_id_range = range(args.cup_id * 2 + 1, (args.cup_id + 1) * 2 + 1)
 
-        for cup_id in cup_id_range:
+            if args.debug:
+                cup_id_range = range(1, 2)
+            else:
+                cup_id_range = range(args.cup_id * 2 + 1, (args.cup_id + 1) * 2 + 1)
 
-           cup_name = 'cup{}'.format(cup_id)
+            for cup_id in cup_id_range:
 
-           for x in np.linspace(CUP_X_LIM[0], CUP_X_LIM[1], x_steps):
+               cup_name = 'cup{}'.format(cup_id)
 
-               for y in np.linspace(CUP_Y_LIM[0], CUP_Y_LIM[1], y_steps):
+               for x in np.linspace(CUP_X_LIM[0], CUP_X_LIM[1], x_steps):
 
-                   # Change pose of the cup and get an image sample
-                   planner.reset_table(x, y, 0, cup_name, duration=0.01)
-                   image_arr = planner.capture_image()
-                   image = Image.fromarray(image_arr)
+                   for y in np.linspace(CUP_Y_LIM[0], CUP_Y_LIM[1], y_steps):
 
-                   # Get latent1
-                   latent = model.get_latent(image)
-                   latent = latent.detach().cpu().numpy()
+                       # Change pose of the cup and get an image sample
+                       planner.reset_table(x, y, 0, cup_name, duration=0.01)
+                       image_arr = planner.capture_image()
+                       image = Image.fromarray(image_arr)
 
-                   # Store samples
-                   cup_positions.append((x, y))
-                   latents.append(latent)
-                   container_distances.append(distance)
-                   container_azimuths.append(azimuth)
-                   container_elevations.append(elevation)
-                   cup_ids.append(cup_id)
-                   lookat_points.append(lookat)
+                       # Get latent1
+                       latent = model.get_latent(image)
+                       latent = latent.detach().cpu().numpy()
 
-                   # Visualize affordance results
-                   if args.debug:
-                       affordance, sample = model.reconstruct(image)
-                       sample_visualize(sample, affordance, model_path, idx)
+                       # Store samples
+                       cup_positions.append((x, y))
+                       latents.append(latent)
+                       container_distances.append(distance)
+                       container_azimuths.append(azimuth)
+                       container_elevations.append(elevation)
+                       cup_ids.append(cup_id)
+                       lookat_points.append(lookat)
 
-                   idx += 1
-                   print("sample: {} / {}".format(idx, (steps ** 5) * x_steps * y_steps * cup_id_steps))
+                       # Visualize affordance results
+                       if args.debug:
+                           affordance, sample = model.reconstruct(image)
+                           sample_visualize(sample, affordance, model_path, idx)
+
+                       idx += 1
+                       print("sample: {} / {}".format(idx, (steps ** 5) * x_steps * y_steps * cup_id_steps))
 
     # Save training samples
     save_path = os.path.join(model_path, 'mujoco_latents')
@@ -142,7 +184,12 @@ if __name__  == '__main__':
     if not os.path.exists(save_path):
         os.makedirs(save_path)
 
-    save_path = os.path.join(save_path, 'latents_{}.pkl'.format(args.cup_id))
+
+    if args.clutter_env:
+        save_path = os.path.join(save_path, 'random_{}.pkl'.format(args.cup_id))
+    else:
+        save_path = os.path.join(save_path, 'latents_{}.pkl'.format(args.cup_id))
+
     f = open(save_path, 'wb')
     pickle.dump([np.array(latents), np.array(lookat_points), np.array(container_distances),
                  np.array(container_azimuths), np.array(container_elevations),

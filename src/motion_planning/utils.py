@@ -4,6 +4,8 @@ import argparse
 import tf
 import geometry_msgs.msg
 import torch
+import numpy as np
+from gibson.tools import affordance_to_array
 
 import matplotlib as mpl
 mpl.use('Agg')
@@ -127,6 +129,8 @@ def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=Fal
         parser.add_argument('--g-name', default='rgb_model_v1', type=str)
         parser.add_argument('--g-latent', default=10, type=int)
         parser.add_argument('--cup-id', default=1, type=int)
+        parser.add_argument('--clutter-env', dest='clutter_env', action='store_true')
+        parser.set_defaults(clutter_env=False)
 
 #    if debug:
 #        parser.add_argument('--dataset-name', default='lumi_rtt_star_v2')
@@ -152,6 +156,27 @@ def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=Fal
 
     args = parser.parse_args()
     return args
+
+
+def sample_visualize(image, affordance, sample_path, id):
+
+    image = np.transpose(image, (1, 2, 0))
+
+    if not os.path.exists(sample_path):
+        os.makedirs(sample_path)
+
+    affordance = affordance_to_array(affordance).transpose((1, 2, 0)) / 255.
+
+    samples = np.stack((image, affordance))
+
+    fig, axeslist = plt.subplots(ncols=2, nrows=1, figsize=(30, 30))
+
+    for idx in range(samples.shape[0]):
+        axeslist.ravel()[idx].imshow(samples[idx], cmap=plt.jet())
+        axeslist.ravel()[idx].set_axis_off()
+
+    plt.savefig(os.path.join(sample_path, 'sample_{}.png'.format(id)))
+    plt.close(fig)
 
 
 #    print("Give the position of a cup:")
@@ -230,6 +255,8 @@ LUMI_X_LIM = [0.4, 0.75]
 LUMI_Y_LIM = [-0.20, 0.20]
 LUMI_Z_LIM = [.3, .3]
 
+NO_CUP_SHOWN_POSE = [0.42, -0.18]
+
 BEHAVIOUR_ROOT = '/home/aleksi/mujoco_ws/src/motion_planning/src/behavioural_vae/models'
 POLICY_ROOT = '/home/aleksi/mujoco_ws/src/motion_planning/policy_models'
 GIBSON_ROOT = '/home/aleksi/mujoco_ws/src/motion_planning/src/gibson/perception_results'
@@ -240,9 +267,10 @@ DISTANCE = 1.16
 AZIMUTH = -90.
 ELEVATION = -30
 
+LOOK_AT_EPSILON = 0.05
+DISTANCE_EPSILON = 0.05
 ELEVATION_EPSILON = 2.
 AZIMUTH_EPSILON = 2.
-DISTANCE_EPSILON = 0.05
 
 CUP_X_LIM = [0.4, 0.75]
 CUP_Y_LIM = [-0.20, 0.20]

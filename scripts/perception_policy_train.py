@@ -6,8 +6,10 @@ from torch.utils import data
 from torch.nn import functional as F
 import numpy as np
 
-from motion_planning.utils import parse_arguments, GIBSON_ROOT, BEHAVIOUR_ROOT, save_arguments, use_cuda
+from motion_planning.utils import parse_arguments, GIBSON_ROOT, POLICY_ROOT, BEHAVIOUR_ROOT, save_arguments, use_cuda
 from motion_planning.utils import plot_loss, plot_scatter, plot_latent_distributions
+from motion_planning.utils import LOOK_AT, DISTANCE, AZIMUTH, ELEVATION, ELEVATION_EPSILON, AZIMUTH_EPSILON, DISTANCE_EPSILON, LOOK_AT_EPSILON
+
 from motion_planning.perception_policy import end_effector_pose, Predictor
 from behavioural_vae.utils import MIN_ANGLE, MAX_ANGLE
 from behavioural_vae.ros_monitor import ROSTrajectoryVAE
@@ -20,7 +22,7 @@ def load_dataset(perception_name, fixed_camera, debug):
     data_files = os.listdir(data_path)
 
     if debug:
-        data_files = [data_files[0]]
+        data_files = [data_files[0], data_files[-2]]
 
     print("Loading: ", data_files)
     # Multiple data packages exist
@@ -30,28 +32,45 @@ def load_dataset(perception_name, fixed_camera, debug):
     elevations = []
     target_coords = []
     cup_ids = []
+    lookats = []
 
     for file in data_files:
+        print(file)
         dataset = np.load(os.path.join(data_path, file))
-        latents.append(dataset[0][:, 0, :]) # Bug fix
-        camera_distances.append(dataset[1])
-        azimuths.append(dataset[2])
-        elevations.append(dataset[3])
-        cup_ids.append(dataset[4])
-        target_coords.append(dataset[5])
+        if len(dataset) < 7: # Dataset without lookats
+
+            latents.append(dataset[0][:, 0, :]) # Bug fix
+            lookat_values = np.zeros([dataset[0].shape[0], 2])
+            lookat_values[:,:] = LOOK_AT[:2]
+
+            lookats.append(lookat_values)
+            camera_distances.append(dataset[1])
+            azimuths.append(dataset[2])
+            elevations.append(dataset[3])
+            cup_ids.append(dataset[4])
+            target_coords.append(dataset[5])
+        else:
+            latents.append(dataset[0][:, 0, :]) # Bug fix
+            lookats.append(dataset[1][:, :2])
+            camera_distances.append(dataset[2])
+            azimuths.append(dataset[3])
+            elevations.append(dataset[4])
+            cup_ids.append(dataset[5])
+            target_coords.append(dataset[6])
 
     # Arrays to numpy
     latents = np.concatenate(latents)
+    lookats = np.concatenate(lookats)
     camera_distances = np.concatenate(camera_distances)
     azimuths = np.concatenate(azimuths)
     elevations = np.concatenate(elevations)
     target_coords = np.concatenate(target_coords)
     cup_ids = np.concatenate(cup_ids)
 
-    # Normalization
-    camera_distances = (camera_distances - np.min(camera_distances)) / (np.max(camera_distances) - np.min(camera_distances))
-    azimuths = (azimuths - np.min(azimuths)) / (np.max(azimuths) - np.min(azimuths))
-    elevations = (elevations - np.min(elevations)) / (np.max(elevations) - np.min(elevations))
+    lookats = (lookats - (np.array(LOOK_AT[:2]) - LOOK_AT_EPSILON)) / (LOOK_AT_EPSILON * 2)
+    camera_distances = (camera_distances - (DISTANCE - DISTANCE_EPSILON)) / (DISTANCE_EPSILON * 2)
+    azimuths = (azimuths - (AZIMUTH - AZIMUTH_EPSILON)) / (AZIMUTH_EPSILON * 2)
+    elevations = (elevations - (ELEVATION - ELEVATION_EPSILON)) / (ELEVATION_EPSILON * 2)
 
     if fixed_camera:
 
@@ -59,8 +78,10 @@ def load_dataset(perception_name, fixed_camera, debug):
         distance = camera_distances[0]
         azimuth = azimuths[0]
         elevation = elevations[0]
+        lookat = lookats[0]
 
         fixed_indices = camera_distances == distance
+        fixed_camera = fixed_camera * (lookats == lookat)
         fixed_indices = fixed_indices * (elevations == azimuth)
         fixed_indices = fixed_indices * (azimuths == elevation)
 
@@ -68,7 +89,7 @@ def load_dataset(perception_name, fixed_camera, debug):
         target_coords = target_coords[fixed_indices]
 
     else:
-        inputs = np.concatenate([latents, camera_distances[:, None], azimuths[:, None], elevations[:, None]], axis=1)
+        inputs = np.concatenate([latents, lookats, camera_distances[:, None], azimuths[:, None], elevations[:, None]], axis=1)
 
     print(inputs.shape)
 
@@ -85,7 +106,7 @@ def load_dataset(perception_name, fixed_camera, debug):
 
 def main(args):
 
-    save_path = os.path.join('../policy_log', args.policy_name)
+    save_path = os.path.join(POLICY_ROOT, args.policy_name)
     save_arguments(args, save_path)
 
     device = use_cuda()
@@ -107,7 +128,7 @@ def main(args):
     if args.fixed_camera:
         policy = Predictor(args.g_latent, args.latent_dim)
     else:
-        policy = Predictor(args.g_latent + 3, args.latent_dim)
+        policy = Predictor(args.g_latent + 5, args.latent_dim)
 
     policy.to(device)
 

@@ -131,7 +131,7 @@ class SimulationInterface(object):
 
         return plan
 
-# For grasping roll_rad=np.pi/2, pitch_rad=np.pi/4, yaw_rad=np.pi/2):
+    # For grasping roll_rad=np.pi/2, pitch_rad=np.pi/4, yaw_rad=np.pi/2):
     def plan_end_effector_to_position(self, x_p=0.5, y_p=0, z_p=0.5,  roll_rad=0, pitch_rad=np.pi, yaw_rad=np.pi):
 
         self.arm_planner.clear_pose_targets()
@@ -178,6 +178,16 @@ class SimulationInterface(object):
        reset = rospy.ServiceProxy('lumi_mujoco/reset_table', ChangeCupPose)
        try:
            reset(object_name, x, y, z)
+       except rospy.ServiceException as exc:
+           print("Reset did not work:" + str(exc))
+
+       rospy.sleep(duration)
+
+    def change_object_position(self, x, y, z, object_name, duration=0.5):
+
+       change_pose = rospy.ServiceProxy('lumi_mujoco/change_object_pose', ChangeCupPose)
+       try:
+           change_pose(object_name, x, y, z)
        except rospy.ServiceException as exc:
            print("Reset did not work:" + str(exc))
 

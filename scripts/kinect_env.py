@@ -11,35 +11,14 @@ from motion_planning.perception_policy import Predictor
 from behavioural_vae.ros_monitor import ROSTrajectoryVAE
 from gibson.ros_monitor import RosPerceptionVAE
 from tf.transformations import euler_from_quaternion, quaternion_matrix
-from gibson.tools import affordance_to_array
 
 from motion_planning.utils import parse_arguments, GIBSON_ROOT, load_parameters, BEHAVIOUR_ROOT, POLICY_ROOT, use_cuda
-from motion_planning.utils import LOOK_AT, DISTANCE, AZIMUTH, ELEVATION, CUP_X_LIM, CUP_Y_LIM
+from motion_planning.utils import DISTANCE, AZIMUTH, ELEVATION, sample_visualize
 from motion_planning.utils import ELEVATION_EPSILON, AZIMUTH_EPSILON, DISTANCE_EPSILON
 from motion_planning.monitor import TrajectoryEnv
 from PyInquirer import prompt, style_from_dict, Token
 import rospy
 
-
-def sample_visualize(image, affordance, sample_path, id):
-
-    image = np.transpose(image, (1, 2, 0))
-
-    if not os.path.exists(sample_path):
-        os.makedirs(sample_path)
-
-    affordance = affordance_to_array(affordance).transpose((1, 2, 0)) / 255.
-
-    samples = np.stack((image, affordance))
-
-    fig, axeslist = plt.subplots(ncols=2, nrows=1, figsize=(30, 30))
-
-    for idx in range(samples.shape[0]):
-        axeslist.ravel()[idx].imshow(samples[idx], cmap=plt.jet())
-        axeslist.ravel()[idx].set_axis_off()
-
-    plt.savefig(os.path.join(sample_path, 'sample_{}.png'.format(id)))
-    plt.close(fig)
 
 
 style = style_from_dict({
