@@ -129,9 +129,9 @@ def main(args):
 
     # Policy
     if args.fixed_camera:
-        policy = Predictor(args.g_latent, args.latent_dim)
+        policy = Predictor(args.g_latent, args.latent_dim, args.num_params)
     else:
-        policy = Predictor(args.g_latent + 5, args.latent_dim)
+        policy = Predictor(args.g_latent + 5, args.latent_dim, args.num_params)
 
     policy.to(device)
 

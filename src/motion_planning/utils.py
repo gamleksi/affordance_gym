@@ -111,6 +111,7 @@ def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=Fal
         parser.add_argument('--policy-name', default='model_v1', type=str, help='')
 
         parser.add_argument('--num-epoch', default=1000, type=int)
+        parser.add_argument('--num-params', default=128, type=int)
 
         parser.add_argument('--batch-size', default=124, type=int)
 

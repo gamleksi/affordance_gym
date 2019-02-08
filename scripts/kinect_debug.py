@@ -78,7 +78,7 @@ def main(args):
     perception = RosPerceptionVAE(gibson_model_path, args.g_latent)
 
     # Policy
-    policy = Predictor(args.g_latent + 5, args.latent_dim)
+    policy = Predictor(args.g_latent + 5, args.latent_dim, args.num_params)
     policy.to(device)
     policy_path = os.path.join(POLICY_ROOT, args.policy_name)
     load_parameters(policy, policy_path, 'model')

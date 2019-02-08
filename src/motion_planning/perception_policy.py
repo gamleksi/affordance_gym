@@ -5,13 +5,13 @@ import numpy as np
 
 class Predictor(nn.Module):
 
-    def __init__(self, input_size, output_size):
+    def __init__(self, input_size, output_size, params):
 
         super(Predictor, self).__init__()
 
-        self.fc1 = nn.Linear(input_size, 72)
-        self.fc2 = nn.Linear(72, 72)
-        self.fc3 = nn.Linear(72, output_size)
+        self.fc1 = nn.Linear(input_size, params)
+        self.fc2 = nn.Linear(params, params)
+        self.fc3 = nn.Linear(params, output_size)
 
         self.relu = nn.ReLU()
 
