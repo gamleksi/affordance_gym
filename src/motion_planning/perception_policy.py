@@ -9,9 +9,9 @@ class Predictor(nn.Module):
 
         super(Predictor, self).__init__()
 
-        self.fc1 = nn.Linear(input_size, 128)
-        self.fc2 = nn.Linear(128, 128)
-        self.fc3 = nn.Linear(128, output_size)
+        self.fc1 = nn.Linear(input_size, 72)
+        self.fc2 = nn.Linear(72, 72)
+        self.fc3 = nn.Linear(72, output_size)
 
         self.relu = nn.ReLU()
 

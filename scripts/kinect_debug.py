@@ -63,7 +63,6 @@ def take_num(elem):
 
 def main(args):
 
-    rospy.init_node('kinect_debug', anonymous=True)
     device = use_cuda()
 
     assert(args.model_index > -1)

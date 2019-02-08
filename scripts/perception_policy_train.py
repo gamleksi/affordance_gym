@@ -41,7 +41,8 @@ def load_dataset(perception_name, fixed_camera, debug):
 
             latents.append(dataset[0][:, 0, :]) # Bug fix
             lookat_values = np.zeros([dataset[0].shape[0], 2])
-            lookat_values[:,:] = LOOK_AT[:2]
+            lookat_values[:, :] = LOOK_AT[:2]
+            print('old', file)
 
             lookats.append(lookat_values)
             camera_distances.append(dataset[1])
@@ -50,6 +51,8 @@ def load_dataset(perception_name, fixed_camera, debug):
             cup_ids.append(dataset[4])
             target_coords.append(dataset[5])
         else:
+
+            print('new', file)
             latents.append(dataset[0][:, 0, :]) # Bug fix
             lookats.append(dataset[1][:, :2])
             camera_distances.append(dataset[2])
@@ -249,12 +252,12 @@ def main(args):
             best_val = avg_loss
             torch.save(policy.state_dict(), os.path.join(save_path, 'model.pth.tar'))
 
-        plot_scatter(train_poses, train_targets, os.path.join(save_path, 'train_scatter.png'))
-        plot_scatter(val_poses, val_targets, os.path.join(save_path, 'val_scatter.png'))
-        poses = np.concatenate([train_poses, val_poses])
-        targets = np.concatenate([train_targets, val_targets])
-        plot_scatter(poses, targets, os.path.join(save_path, 'full_scatter.png'))
-        plot_latent_distributions(latents, os.path.join(save_path, 'latents_distribution.png'))
+        # plot_scatter(train_poses, train_targets, os.path.join(save_path, 'train_scatter.png'))
+        # plot_scatter(val_poses, val_targets, os.path.join(save_path, 'val_scatter.png'))
+        # poses = np.concatenate([train_poses, val_poses])
+        # targets = np.concatenate([train_targets, val_targets])
+        # plot_scatter(poses, targets, os.path.join(save_path, 'full_scatter.png'))
+        # plot_latent_distributions(latents, os.path.join(save_path, 'latents_distribution.png'))
 
         plot_loss(avg_train_losses, avg_val_losses, 'Avg mse', os.path.join(save_path, 'avg_mse.png'))
         plot_loss(np.log(avg_train_losses), np.log(avg_val_losses), 'Avg mse in log scale', os.path.join(save_path, 'avg_log_mse.png'))
