@@ -3,22 +3,23 @@ import csv
 import numpy as np
 from PIL import Image
 import torch
+import pandas as pd
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
 
 from motion_planning.simulation_interface import SimulationInterface
+from motion_planning.hardware_interface import HardwareInterface
 from motion_planning.perception_policy import Predictor
 from behavioural_vae.ros_monitor import ROSTrajectoryVAE
 from gibson.ros_monitor import RosPerceptionVAE
 from tf.transformations import euler_from_quaternion, quaternion_matrix
 
 from motion_planning.utils import parse_arguments, GIBSON_ROOT, load_parameters, BEHAVIOUR_ROOT, POLICY_ROOT, use_cuda
-from motion_planning.utils import DISTANCE, AZIMUTH, ELEVATION, sample_visualize
+from motion_planning.utils import DISTANCE, AZIMUTH, ELEVATION, sample_visualize, LOOK_AT, LOOK_AT_EPSILON, CUP_NAMES, KINECT_EXPERIMENTS_PATH
 from motion_planning.utils import ELEVATION_EPSILON, AZIMUTH_EPSILON, DISTANCE_EPSILON
 from motion_planning.monitor import TrajectoryEnv
 from PyInquirer import prompt, style_from_dict, Token
 import rospy
-
 
 
 style = style_from_dict({
@@ -30,7 +31,7 @@ style = style_from_dict({
 })
 
 
-def change_camera_pose(sim):
+def change_camera_pose(sim, real_hw):
     # Sim object reference
 
     camera_found = False
@@ -67,35 +68,56 @@ def change_camera_pose(sim):
         kinect_azimuth = (yaw / np.pi) * 180
         kinect_elevation = (-pitch / np.pi) * 180
 
-        sim.change_camere_params(kinect_lookat, kinect_distance, kinect_azimuth, kinect_elevation)
+        if not(real_hw):
+            sim.change_camere_params(kinect_lookat, kinect_distance, kinect_azimuth, kinect_elevation)
 
-        kinect_service = '/camera/rgb/image_raw'
-
-        print("camera_pose", cam_position)
-        print("Kinect lookat", kinect_lookat)
-        print("distance", kinect_distance)
-        print("azimuth", kinect_azimuth)
-        print("kinect_elevation", kinect_elevation)
+        print("*****")
+        print("Camera Position", cam_position, "roll", roll, "pitch", pitch, "yaw", yaw)
+        print("*****")
+        print("LOOKA_POINTS:")
+        print("Current", kinect_lookat[0], kinect_lookat[1])
+        print("Lookat values while training", LOOK_AT[0], LOOK_AT[1], "Epsilon", LOOK_AT_EPSILON[0])
+        print("Current ERROR", np.abs(kinect_lookat[0] - LOOK_AT[0]), np.abs(kinect_lookat[1] - LOOK_AT[1]))
+        print("*****")
+        print("DISTANCE")
+        print("current", kinect_distance)
+        print("distance values while training", DISTANCE, "Epsilon", DISTANCE_EPSILON)
+        print("Current ERROR", np.abs(kinect_distance - DISTANCE))
+        print("*****")
+        print("AZIMUTH")
+        print("current", kinect_azimuth)
+        print("azimuth values while training", AZIMUTH, "Epsilon", AZIMUTH_EPSILON)
+        print("Current ERROR", np.abs(kinect_azimuth - AZIMUTH))
+        print("*****")
+        print("ELEVATION")
+        print("current", kinect_elevation)
+        print("elevation values while training", ELEVATION, "Epsilon", ELEVATION_EPSILON)
+        print("Current ERROR", np.abs(kinect_elevation - ELEVATION))
+        print("*****")
+        print("LOOKAT PASSED X", np.abs(kinect_lookat[0] - LOOK_AT[0]) < LOOK_AT_EPSILON[0])
+        print("LOOKAT PASSED Y", np.abs(kinect_lookat[1] - LOOK_AT[1]) < LOOK_AT_EPSILON[1])
+        print("Distance Passed", np.abs(kinect_distance - DISTANCE) < DISTANCE_EPSILON)
+        print("Azimuth Passed", np.abs(kinect_azimuth - AZIMUTH) < AZIMUTH_EPSILON)
+        print("Elevation Passed", np.abs(kinect_elevation - ELEVATION) < ELEVATION_EPSILON)
         answer = prompt(camera_questions, style=style)
         camera_found = answer.get('camera_found')
 
     # Normalized Camera Params
+    n_lookat = (kinect_lookat[:2] - (np.array(LOOK_AT[:2]) - LOOK_AT_EPSILON)) / (LOOK_AT_EPSILON * 2)
     n_camera_distance = (kinect_distance - (DISTANCE - DISTANCE_EPSILON)) / (DISTANCE_EPSILON * 2)
     n_azimuth = (kinect_azimuth - (AZIMUTH - AZIMUTH_EPSILON)) / (AZIMUTH_EPSILON * 2)
     n_elevation = (kinect_elevation - (ELEVATION - ELEVATION_EPSILON)) / (ELEVATION_EPSILON * 2)
-    camera_params = [n_camera_distance, n_azimuth, n_elevation]
+    camera_params = [n_lookat[0], n_lookat[1], n_camera_distance, n_azimuth, n_elevation]
 
-    return camera_params, (kinect_distance, kinect_azimuth, kinect_elevation, roll, kinect_lookat)
+    return camera_params, (kinect_lookat[0], kinect_lookat[1], kinect_distance, kinect_azimuth, kinect_elevation, roll)
 
-
-def crop_top(image):
+def crop_top(image, top_crop, width_crop):
     width, height = image.size
     left = 0
-    top = 21
-    right = width
+    top = top_crop
+    right = width - width_crop
     bottom = height
     return image.crop((left, top, right, bottom))
-
 
 def main(args):
 
@@ -115,18 +137,22 @@ def main(args):
     perception = RosPerceptionVAE(gibson_model_path, args.g_latent)
 
     # Policy
-    policy = Predictor(args.g_latent + 3, args.latent_dim)
+    policy = Predictor(args.g_latent + 5, args.latent_dim, args.num_params)
     policy.to(device)
     policy_path = os.path.join(POLICY_ROOT, args.policy_name)
     load_parameters(policy, policy_path, 'model')
 
     # Simulation interface
-    sim = SimulationInterface(arm_name='lumi_arm')
-    sim.reset(duration=2.0)
+    if args.real_hw:
+        planning_interface = HardwareInterface(arm_name='lumi_arm')
+        planning_interface.reset(0.0)
+    else:
+        planning_interface = SimulationInterface(arm_name='lumi_arm')
+        planning_interface.reset(duration=2.0)
 
-    camera_params, log_cam_params = change_camera_pose(sim)
+    camera_params, log_cam_params = change_camera_pose(planning_interface, args.real_hw)
 
-    env = TrajectoryEnv(action_vae, sim, args.num_actions, num_joints=args.num_joints, trajectory_duration=0.5)
+    env = TrajectoryEnv(action_vae, planning_interface, args.num_actions, num_joints=args.num_joints, trajectory_duration=0.5)
 
     app_questions = [
         {
@@ -137,7 +163,7 @@ def main(args):
         }
     ]
 
-    save_path = os.path.join('../kinect_experiments', args.log_name)
+    save_path = os.path.join(KINECT_EXPERIMENTS_PATH, args.log_name)
 
     if not os.path.exists(save_path):
         os.makedirs(save_path)
@@ -151,6 +177,10 @@ def main(args):
 
     if args.log:
 
+        cup_log = {}
+        for cup_name in CUP_NAMES:
+            cup_log[cup_name] = [[], []] # Target Pose, End Effector Pose, error sum
+
         log_path = os.path.join(save_path, 'cup_log.csv')
 
         if not(os.path.exists(os.path.join(save_path, 'inputs'))):
@@ -159,23 +189,35 @@ def main(args):
             f = open(log_path, 'w')
             writer = csv.writer(f)
             writer.writerow(['cup_type', 'cup_x', 'cup_y', 'end_pose_x', 'end_pose_y',
-                     'distance', 'azimuth', 'elevation', 'roll',
-                     'kinect_lookat_x', 'kinect_lookat_y', 'kinect_lookat_z'])
+                     'kinect_lookat_x', 'kinect_lookat_y', 'kinect_distance', 'kinect_azimuth',
+                             'kinect_elevation', 'roll', 'top_crop', 'width_crop'])
             f.close()
         else:
+            previous_data = pd.read_csv(log_path)
+            previous_data = previous_data.values
+            cup_types = np.array(previous_data[:, 0], str)
+
+            for i in range(cup_types.__len__()):
+                cup_type = cup_types[i]
+                cup_log[cup_type][0].append(float(previous_data[i, 1]))
+                cup_log[cup_type][1].append(float(previous_data[i, 2]))
+                cup_log[cup_type][2].append(float(previous_data[i, 3]))
+                cup_log[cup_type][3].append(float(previous_data[i, 4]))
+
             i = len(os.listdir(os.path.join(save_path, 'inputs')))
 
     while run_experiment:
 
         if change_camera:
-            camera_params, log_cam_params = change_camera_pose()
+            camera_params, log_cam_params = change_camera_pose(planning_interface, args.real_hw)
 
         if args.log:
             cup_questions = [
                 {
-                    'type': 'input',
+                    'type': 'list',
                     'name': 'cup_type',
-                    'message': 'What is the cup type?'
+                    'message': 'What is the cup type?',
+                    'choices': CUP_NAMES
                 },
                 {
                     'type': 'input',
@@ -190,15 +232,14 @@ def main(args):
             ]
             cup_answers = prompt(cup_questions)
 
-        image_arr = sim.capture_image(kinect_service)
+        image_arr = planning_interface.capture_image(kinect_service)
         image = Image.fromarray(image_arr)
 
         # For visualization
-        affordance, sample = perception.reconstruct(crop_top(image)) # TODO sample visualize
-
+        affordance, sample = perception.reconstruct(crop_top(image, args.top_crop, args.width_crop)) # TODO sample visualize
 
         # Image -> Latent1
-        latent1 = perception.get_latent(crop_top(image))
+        latent1 = perception.get_latent(crop_top(image, args.top_crop, args.width_crop))
 
         camera_input = Variable(torch.Tensor(camera_params).to(device))
         camera_input = camera_input.unsqueeze(0)
@@ -215,7 +256,9 @@ def main(args):
             end_pose.pose.position.y))
 
         print("end_pose", end_pose)
-        sim.reset_table(end_pose[0], end_pose[1], 0.0, 'box2')
+        env.reset_environment()
+
+        # sim.reset_table(end_pose[0], end_pose[1], 0.0, 'box2')
         i += 1
 
         if args.log:
@@ -226,11 +269,21 @@ def main(args):
 
             print('distance error', np.linalg.norm(np.array([cup_x, cup_y]) - end_pose))
 
+            cup_log[cup_type][0].append(cup_x)
+            cup_log[cup_type][1].append(cup_y)
+            cup_log[cup_type][2].append(end_pose[0])
+            cup_log[cup_type][3].append(end_pose[1])
+
+            plt.figure(figsize=(5, 10))
+            plt.scatter(cup_log[cup_type][0], cup_log[cup_type][1], label='cup pos')
+            plt.scatter(cup_log[cup_type][2], cup_log[cup_type][3], label='end pos')
+            plt.savefig(os.path.join(save_path, '{}_results.png'.format(cup_type)))
+
             f = open(log_path, 'a')
             writer = csv.writer(f)
             writer.writerow([cup_type, cup_x, cup_y, end_pose[0], end_pose[1],
                log_cam_params[0], log_cam_params[1], log_cam_params[2], log_cam_params[3],
-               log_cam_params[4][0], log_cam_params[4][1], log_cam_params[4][2]])
+                             log_cam_params[4], log_cam_params[5], args.top_crop, args.width_crop])
             f.close()
 
             image.save(os.path.join(save_path, 'inputs', 'sample_{}.png'.format(i)))
