@@ -5,7 +5,7 @@ import tf
 import geometry_msgs.msg
 import torch
 import numpy as np
-from gibson.tools import affordance_to_array
+from gibson.tools import affordance_to_array, affordance_layers_to_array
 
 import matplotlib as mpl
 mpl.use('Agg')
@@ -165,26 +165,31 @@ def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=Fal
     return args
 
 
-def sample_visualize(image, affordance, sample_path, id):
+def sample_visualize(image, affordance_arr, sample_path, id):
 
     image = np.transpose(image, (1, 2, 0))
 
     if not os.path.exists(sample_path):
         os.makedirs(sample_path)
 
-    affordance = affordance_to_array(affordance).transpose((1, 2, 0)) / 255.
+    affordance = affordance_to_array(affordance_arr).transpose((1, 2, 0)) / 255.
 
-    samples = np.stack((image, affordance))
+    affordance_layers = affordance_layers_to_array(affordance_arr) / 255.
+    affordance_layers = np.transpose(affordance_layers, (0, 2, 3, 1))
+    # affordance_layers = [layer for layer in affordance_layers]
 
-    fig, axeslist = plt.subplots(ncols=2, nrows=1, figsize=(30, 30))
+    samples = np.stack((image, affordance, affordance_layers[0], affordance_layers[1]))
+
+    fig, axeslist = plt.subplots(ncols=4, nrows=1)
 
     for idx in range(samples.shape[0]):
         axeslist.ravel()[idx].imshow(samples[idx], cmap=plt.jet())
         axeslist.ravel()[idx].set_axis_off()
 
+    plt.tight_layout()
+
     plt.savefig(os.path.join(sample_path, 'sample_{}.png'.format(id)))
     plt.close(fig)
-
 
 #    print("Give the position of a cup:")
 #    x = float(raw_input("Enter x: "))
