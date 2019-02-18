@@ -250,7 +250,7 @@ def main(args):
 
         if avg_loss < best_val:
             best_val = avg_loss
-            torch.save(policy.state_dict(), os.path.join(save_path, 'model.pth.tar'))
+            torch.save(policy.state_dict(), os.path.join(save_path, '{}_model.pth.tar'.format(epoch)))
 
         # plot_scatter(train_poses, train_targets, os.path.join(save_path, 'train_scatter.png'))
         # plot_scatter(val_poses, val_targets, os.path.join(save_path, 'val_scatter.png'))

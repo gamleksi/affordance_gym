@@ -132,6 +132,8 @@ def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=Fal
         parser.add_argument('--cup-id', default=1, type=int)
         parser.add_argument('--clutter-env', dest='clutter_env', action='store_true')
         parser.set_defaults(clutter_env=False)
+        parser.add_argument('--two-cups', dest='two_cups', action='store_true')
+        parser.set_defaults(two_cups=False)
 
 #    if debug:
 #        parser.add_argument('--dataset-name', default='lumi_rtt_star_v2')
@@ -148,10 +150,14 @@ def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=Fal
         parser.set_defaults(randomize_all=False)
 
     if kinect:
+
         parser.add_argument('--log', dest='log', action='store_true')
         parser.set_defaults(log=False)
+        parser.add_argument('--real-hw', dest='real_hw', action='store_true')
+        parser.set_defaults(real_hw=False)
         parser.add_argument('--log-name', default='kinect_example', type=str)
-
+        parser.add_argument('--top-crop', default=44, type=int)
+        parser.add_argument('--width-crop', default=28, type=int)
 
     parser.add_argument('--debug', dest='debug', action='store_true')
 
@@ -261,6 +267,7 @@ NO_CUP_SHOWN_POSE = [0.42, -0.18]
 BEHAVIOUR_ROOT = '/home/aleksi/catkin_ws/src/motion_planning/src/behavioural_vae/models'
 POLICY_ROOT = '/home/aleksi/catkin_ws/src/motion_planning/policy_models'
 GIBSON_ROOT = '/home/aleksi/catkin_ws/src/motion_planning/src/gibson/perception_results'
+KINECT_EXPERIMENTS_PATH = '/home/aleksi/catkin_ws/src/motion_planning/kinect_experiments'
 
 # Perception parameters
 LOOK_AT = [0.70, 0.0, 0.0]
@@ -275,3 +282,5 @@ AZIMUTH_EPSILON = 2.
 
 CUP_X_LIM = [0.4, 0.75]
 CUP_Y_LIM = [-0.20, 0.20]
+
+CUP_NAMES = ['rocket', 'karol', 'gray', 'can', 'blue', 'subway', 'yellow', 'mirror', 'red', 'other']

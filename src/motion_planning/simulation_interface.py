@@ -37,16 +37,14 @@ import cv_bridge
 #    def remove_object(self, name):
 #        self.scene.remove_world_object(name)
 
-
 GRIPPER_POSITION_LIMITS = (LUMI_X_LIM, LUMI_Y_LIM, LUMI_Z_LIM)
 GRIPPER_OPEN_VALUES = (0.04, 0.04)
 
-class SimulationInterface(object):
+
+class MCInterface(object):
 
     def __init__(self, arm_name, gripper_name=None, planning_id='RRT', gripper_open_values=GRIPPER_OPEN_VALUES,
                  gripper_position_limit=GRIPPER_POSITION_LIMITS):
-
-        # Initialize Moveit Node interface
         mc.roscpp_initialize(sys.argv)
         # rospy.init_node('motion_planning', anonymous=True)
 
@@ -59,7 +57,6 @@ class SimulationInterface(object):
             self.gripper_planner = None
 
         self.gripper_position_limit = gripper_position_limit
-
 
     def build_planning_interface(self, name, planning_id):
 
@@ -78,7 +75,6 @@ class SimulationInterface(object):
                             self.gripper_open_values)
             self.gripper_planner.plan()
             self.gripper_planner.go(wait=True)
-            rospy.sleep(2)
 
     def current_joint_values(self):
         return self.arm_planner.get_current_joint_values()
@@ -94,7 +90,6 @@ class SimulationInterface(object):
             self.gripper_planner.set_joint_value_target([0., 0.])
             self.gripper_planner.plan()
             self.gripper_planner.go(wait=True)
-            rospy.sleep(1)
 
     def print_current_pose(self):
         pose = self.arm_planner.get_current_pose()
@@ -106,32 +101,7 @@ class SimulationInterface(object):
         print('Current Joint Values:')
         print(self.arm_planner.get_current_joint_values())
 
-    def random_end_effector_pose(self):
-        x_p = random.uniform(GRIPPER_POSITION_LIMITS[0][0], GRIPPER_POSITION_LIMITS[0][1])
-        y_p = random.uniform(GRIPPER_POSITION_LIMITS[1][0], GRIPPER_POSITION_LIMITS[1][1])
-        z_p = random.uniform(GRIPPER_POSITION_LIMITS[2][0], GRIPPER_POSITION_LIMITS[2][1])
-        return x_p, y_p, z_p
-
-    def random_trajectory(self):
-        x_p, y_p, z_p = self.random_end_effector_pose()
-        return self.move_arm_to_position(x_p=x_p, y_p=y_p, z_p=z_p)
-
-    def random_plan(self):
-
-        plan = None
-        while plan is None:
-
-            x_p, y_p, z_p = self.random_end_effector_pose()
-
-            plan = self.plan_end_effector_to_position(x_p=x_p, y_p=y_p, z_p=z_p)
-
-            if plan is None:
-                print(x_p, y_p, z_p)
-                print('Failed')
-
-        return plan
-
-    # For grasping roll_rad=np.pi/2, pitch_rad=np.pi/4, yaw_rad=np.pi/2):
+     # For grasping roll_rad=np.pi/2, pitch_rad=np.pi/4, yaw_rad=np.pi/2):
     def plan_end_effector_to_position(self, x_p=0.5, y_p=0, z_p=0.5,  roll_rad=0, pitch_rad=np.pi, yaw_rad=np.pi):
 
         self.arm_planner.clear_pose_targets()
@@ -158,7 +128,81 @@ class SimulationInterface(object):
 
     def do_plan(self, plan):
         succeed = self.arm_planner.execute(plan)
+        self.arm_planner.stop()
         return succeed
+
+    def reset(self, duration):
+        return NotImplementedError
+
+    def capture_image(self, topic):
+
+        try:
+            image_msg = rospy.wait_for_message(topic, Image)
+            img = cv_bridge.CvBridge().imgmsg_to_cv2(image_msg, "rgb8")
+            img_arr = np.uint8(img)
+            return img_arr
+        except rospy.exceptions.ROSException as e:
+            print(e)
+            return None
+
+    def kinect_camera_pose(self):
+
+        listener = tf.TransformListener()
+        try:
+            listener.waitForTransform('/base_link', '/camera_rgb_frame', rospy.Time(0), rospy.Duration(5))
+            (trans, rot) = listener.lookupTransform('/base_link', '/camera_rgb_frame', rospy.Time(0))
+            return trans, rot
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
+            print(e)
+            return None, None
+
+
+class SimulationInterface(MCInterface):
+
+    def __init__(self, arm_name, gripper_name=None, planning_id='RRT', gripper_open_values=GRIPPER_OPEN_VALUES,
+                 gripper_position_limit=GRIPPER_POSITION_LIMITS):
+
+        super(SimulationInterface, self).__init__(arm_name, gripper_name=gripper_name, planning_id=planning_id, gripper_open_values=gripper_open_values,
+                 gripper_position_limit=gripper_position_limit)
+
+        # Initialize Moveit Node interface
+        mc.roscpp_initialize(sys.argv)
+        # rospy.init_node('motion_planning', anonymous=True)
+
+        self.arm_planner = self.build_planning_interface(arm_name, planning_id)
+
+        if gripper_name is not None:
+            self.gripper_planner = self.build_planning_interface(gripper_name, planning_id)
+            self.gripper_open_values = gripper_open_values
+        else:
+            self.gripper_planner = None
+
+        self.gripper_position_limit = gripper_position_limit
+
+    def random_end_effector_pose(self):
+        x_p = random.uniform(GRIPPER_POSITION_LIMITS[0][0], GRIPPER_POSITION_LIMITS[0][1])
+        y_p = random.uniform(GRIPPER_POSITION_LIMITS[1][0], GRIPPER_POSITION_LIMITS[1][1])
+        z_p = random.uniform(GRIPPER_POSITION_LIMITS[2][0], GRIPPER_POSITION_LIMITS[2][1])
+        return x_p, y_p, z_p
+
+    def random_trajectory(self):
+        x_p, y_p, z_p = self.random_end_effector_pose()
+        return self.move_arm_to_position(x_p=x_p, y_p=y_p, z_p=z_p)
+
+    def random_plan(self):
+
+        plan = None
+        while plan is None:
+
+            x_p, y_p, z_p = self.random_end_effector_pose()
+
+            plan = self.plan_end_effector_to_position(x_p=x_p, y_p=y_p, z_p=z_p)
+
+            if plan is None:
+                print(x_p, y_p, z_p)
+                print('Failed')
+
+        return plan
 
     def reset(self, duration):
 
@@ -203,29 +247,6 @@ class SimulationInterface(object):
            request(look_at[0], look_at[1], look_at[2], distance, azimuth, elevation)
        except rospy.ServiceException as exc:
            print("Camera Change did not work:" + str(exc))
-
-    def capture_image(self, topic="/lumi_mujoco/rgb"):
-
-        try:
-            image_msg = rospy.wait_for_message(topic, Image)
-            img = cv_bridge.CvBridge().imgmsg_to_cv2(image_msg, "rgb8")
-            img_arr = np.uint8(img)
-            return img_arr
-        except rospy.exceptions.ROSException as e:
-            print(e)
-            return None
-
-    def kinect_camera_pose(self):
-
-        listener = tf.TransformListener()
-        # rospy.sleep(3)
-        try:
-            listener.waitForTransform('/base_link', '/camera_rgb_frame', rospy.Time(0), rospy.Duration(5))
-            (trans, rot) = listener.lookupTransform('/base_link', '/camera_rgb_frame', rospy.Time(0))
-            return trans, rot
-        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
-            print(e)
-            return None, None
 
 
 from moveit_msgs.msg import RobotTrajectory, genpy
@@ -272,4 +293,7 @@ class CommunicationHandler(object):
 
 if __name__ == '__main__':
     planner = SimulationInterface(arm_name='lumi_arm')
+    joints = planner.current_joint_values()
+    print(joints)
+    import pdb; pdb.set_trace()
 
