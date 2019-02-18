@@ -258,9 +258,9 @@ LUMI_Z_LIM = [.3, .3]
 
 NO_CUP_SHOWN_POSE = [0.42, -0.18]
 
-BEHAVIOUR_ROOT = '/home/aleksi/mujoco_ws/src/motion_planning/src/behavioural_vae/models'
-POLICY_ROOT = '/home/aleksi/mujoco_ws/src/motion_planning/policy_models'
-GIBSON_ROOT = '/home/aleksi/mujoco_ws/src/motion_planning/src/gibson/perception_results'
+BEHAVIOUR_ROOT = '/home/aleksi/catkin_ws/src/motion_planning/src/behavioural_vae/models'
+POLICY_ROOT = '/home/aleksi/catkin_ws/src/motion_planning/policy_models'
+GIBSON_ROOT = '/home/aleksi/catkin_ws/src/motion_planning/src/gibson/perception_results'
 
 # Perception parameters
 LOOK_AT = [0.70, 0.0, 0.0]
