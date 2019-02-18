@@ -5,7 +5,7 @@ class HardwareInterface(MCInterface):
 
     def __init__(self, arm_name):
         super(HardwareInterface, self).__init__(arm_name)
-        self.reset()
+        self.reset(11)
 
     def reset(self, duration):
 

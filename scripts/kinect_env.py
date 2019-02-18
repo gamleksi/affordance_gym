@@ -31,7 +31,7 @@ style = style_from_dict({
 })
 
 
-def change_camera_pose(sim, real_hw):
+def change_camera_pose(sim, real_hw, debug):
     # Sim object reference
 
     camera_found = False
@@ -45,28 +45,42 @@ def change_camera_pose(sim, real_hw):
         }
     ]
 
+
+
+
     while not(camera_found):
 
-        # Kinect parameters TODO
-        cam_position, quaternions = sim.kinect_camera_pose()
+        if debug:
+            cam_position = np.zeros(3)
+            pitch = 0.0
+            yaw = 0.0
+            roll = np.pi
+            kinect_lookat = LOOK_AT
+            kinect_distance = DISTANCE
+            kinect_azimuth = AZIMUTH
+            kinect_elevation =  ELEVATION
 
-        if (cam_position is None):
-            continue
+        else:
 
-        (roll, pitch, yaw) = euler_from_quaternion(quaternion=quaternions)
-        R = quaternion_matrix(quaternions)
-        v = R[:3, 0] # view direction
+            # Kinect parameters TODO
+            cam_position, quaternions = sim.kinect_camera_pose()
 
-        kinect_lookat = np.zeros(3)
+            if (cam_position is None):
+                continue
 
-        t = -cam_position[2] / v[2]
-        kinect_lookat[0] = t * v[0] + cam_position[0]
-        kinect_lookat[1] = t * v[1] + cam_position[1]
+            (roll, pitch, yaw) = euler_from_quaternion(quaternion=quaternions)
+            R = quaternion_matrix(quaternions)
+            v = R[:3, 0] # view direction
 
-        kinect_distance = np.linalg.norm(kinect_lookat - cam_position)
+            kinect_lookat = np.zeros(3)
 
-        kinect_azimuth = (yaw / np.pi) * 180
-        kinect_elevation = (-pitch / np.pi) * 180
+            t = -cam_position[2] / v[2]
+            kinect_lookat[0] = t * v[0] + cam_position[0]
+            kinect_lookat[1] = t * v[1] + cam_position[1]
+
+            kinect_distance = np.linalg.norm(kinect_lookat - cam_position)
+            kinect_azimuth = (yaw / np.pi) * 180
+            kinect_elevation = (-pitch / np.pi) * 180
 
         if not(real_hw):
             sim.change_camere_params(kinect_lookat, kinect_distance, kinect_azimuth, kinect_elevation)
@@ -76,7 +90,7 @@ def change_camera_pose(sim, real_hw):
         print("*****")
         print("LOOKA_POINTS:")
         print("Current", kinect_lookat[0], kinect_lookat[1])
-        print("Lookat values while training", LOOK_AT[0], LOOK_AT[1], "Epsilon", LOOK_AT_EPSILON[0])
+        print("Lookat values while training", LOOK_AT[0], LOOK_AT[1], "Epsilon", LOOK_AT_EPSILON)
         print("Current ERROR", np.abs(kinect_lookat[0] - LOOK_AT[0]), np.abs(kinect_lookat[1] - LOOK_AT[1]))
         print("*****")
         print("DISTANCE")
@@ -94,8 +108,8 @@ def change_camera_pose(sim, real_hw):
         print("elevation values while training", ELEVATION, "Epsilon", ELEVATION_EPSILON)
         print("Current ERROR", np.abs(kinect_elevation - ELEVATION))
         print("*****")
-        print("LOOKAT PASSED X", np.abs(kinect_lookat[0] - LOOK_AT[0]) < LOOK_AT_EPSILON[0])
-        print("LOOKAT PASSED Y", np.abs(kinect_lookat[1] - LOOK_AT[1]) < LOOK_AT_EPSILON[1])
+        print("LOOKAT PASSED X", np.abs(kinect_lookat[0] - LOOK_AT[0]) < LOOK_AT_EPSILON)
+        print("LOOKAT PASSED Y", np.abs(kinect_lookat[1] - LOOK_AT[1]) < LOOK_AT_EPSILON)
         print("Distance Passed", np.abs(kinect_distance - DISTANCE) < DISTANCE_EPSILON)
         print("Azimuth Passed", np.abs(kinect_azimuth - AZIMUTH) < AZIMUTH_EPSILON)
         print("Elevation Passed", np.abs(kinect_elevation - ELEVATION) < ELEVATION_EPSILON)
@@ -150,7 +164,7 @@ def main(args):
         planning_interface = SimulationInterface(arm_name='lumi_arm')
         planning_interface.reset(duration=2.0)
 
-    camera_params, log_cam_params = change_camera_pose(planning_interface, args.real_hw)
+    camera_params, log_cam_params = change_camera_pose(planning_interface, args.real_hw, args.debug)
 
     env = TrajectoryEnv(action_vae, planning_interface, args.num_actions, num_joints=args.num_joints, trajectory_duration=0.5)
 
@@ -159,7 +173,7 @@ def main(args):
             'type': 'list',
             'name': 'run',
             'message': 'Do you want to run a new experiment (y: yes, yc: yes and a change camera pose, n: no)?',
-            'choices': ['y', 'yc', 'n']
+            'choices': ['y', 'yc', 'r', 'n']
         }
     ]
 
@@ -179,7 +193,7 @@ def main(args):
 
         cup_log = {}
         for cup_name in CUP_NAMES:
-            cup_log[cup_name] = [[], []] # Target Pose, End Effector Pose, error sum
+            cup_log[cup_name] = [[], [], [], []] # Target Pose, End Effector Pose, error sum
 
         log_path = os.path.join(save_path, 'cup_log.csv')
 
@@ -190,7 +204,7 @@ def main(args):
             writer = csv.writer(f)
             writer.writerow(['cup_type', 'cup_x', 'cup_y', 'end_pose_x', 'end_pose_y',
                      'kinect_lookat_x', 'kinect_lookat_y', 'kinect_distance', 'kinect_azimuth',
-                             'kinect_elevation', 'roll', 'top_crop', 'width_crop'])
+                             'kinect_elevation', 'roll', 'top_crop', 'width_crop', 'image_file'])
             f.close()
         else:
             previous_data = pd.read_csv(log_path)
@@ -209,7 +223,7 @@ def main(args):
     while run_experiment:
 
         if change_camera:
-            camera_params, log_cam_params = change_camera_pose(planning_interface, args.real_hw)
+            camera_params, log_cam_params = change_camera_pose(planning_interface, args.real_hw, args.debug)
 
         if args.log:
             cup_questions = [
@@ -255,19 +269,24 @@ def main(args):
             end_pose.pose.position.x,
             end_pose.pose.position.y))
 
+        cup_x = float(cup_answers.get('x_pose'))
+        cup_y = float(cup_answers.get('y_pose'))
+        cup_type = str(cup_answers.get('cup_type'))
+
+        print('distance error', np.linalg.norm(np.array([cup_x, cup_y]) - end_pose))
+        sample_visualize(sample, affordance, os.path.join(save_path, 'kinect_results'), i)
+
         print("end_pose", end_pose)
         env.reset_environment()
 
         # sim.reset_table(end_pose[0], end_pose[1], 0.0, 'box2')
         i += 1
 
-        if args.log:
+        answers = prompt(app_questions, style=style)
 
-            cup_x = float(cup_answers.get('x_pose'))
-            cup_y = float(cup_answers.get('y_pose'))
-            cup_type = str(cup_answers.get('cup_type'))
+        if answers.get("run") != "r":
 
-            print('distance error', np.linalg.norm(np.array([cup_x, cup_y]) - end_pose))
+            image.save(os.path.join(save_path, 'inputs', 'sample_{}.png'.format(i)))
 
             cup_log[cup_type][0].append(cup_x)
             cup_log[cup_type][1].append(cup_y)
@@ -275,30 +294,28 @@ def main(args):
             cup_log[cup_type][3].append(end_pose[1])
 
             plt.figure(figsize=(5, 10))
-            plt.scatter(cup_log[cup_type][0], cup_log[cup_type][1], label='cup pos')
-            plt.scatter(cup_log[cup_type][2], cup_log[cup_type][3], label='end pos')
+            plt.scatter(cup_log[cup_type][0], cup_log[cup_type][1], label='cup pos', c='r')
+            plt.scatter(cup_log[cup_type][2], cup_log[cup_type][3], label='end pos', c='b')
+            plt.legend()
             plt.savefig(os.path.join(save_path, '{}_results.png'.format(cup_type)))
+            plt.close()
 
             f = open(log_path, 'a')
             writer = csv.writer(f)
             writer.writerow([cup_type, cup_x, cup_y, end_pose[0], end_pose[1],
                log_cam_params[0], log_cam_params[1], log_cam_params[2], log_cam_params[3],
-                             log_cam_params[4], log_cam_params[5], args.top_crop, args.width_crop])
+                             log_cam_params[4], log_cam_params[5], args.top_crop, args.width_crop, 'sample_{}.png'.format(i)])
             f.close()
 
-            image.save(os.path.join(save_path, 'inputs', 'sample_{}.png'.format(i)))
-
-        sample_visualize(sample, affordance, os.path.join(save_path, 'kinect_results'), i)
-        answers = prompt(app_questions, style=style)
-        if answers.get("run") == "y":
-            run_experiment = True
-            change_camera = False
-        elif answers.get("run") == "yc":
-            run_experiment = True
-            change_camera = True
-        else:
-            run_experiment = False
-            change_camera = False
+            if answers.get("run") == "y":
+                run_experiment = True
+                change_camera = False
+            elif answers.get("run") == "yc":
+                run_experiment = True
+                change_camera = True
+            else:
+                run_experiment = False
+                change_camera = False
 
 
 if __name__ == '__main__':

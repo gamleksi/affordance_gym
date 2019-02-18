@@ -91,18 +91,17 @@ def main(args):
     n_azimuths = (kinect_azimuths - (AZIMUTH - AZIMUTH_EPSILON)) / (AZIMUTH_EPSILON * 2)
     n_elevations = (kinect_elevations - (ELEVATION - ELEVATION_EPSILON)) / (ELEVATION_EPSILON * 2)
 
-    camera_params = np.array([n_lookat_xs, n_lookat_ys, n_camera_distances, n_azimuths, n_elevations])
+    camera_params = np.array([n_lookat_xs, n_lookat_ys, n_camera_distances, n_azimuths, n_elevations], np.float)
 
-    debug_images = os.listdir(os.path.join(log_path, "inputs"))
-    debug_images.sort(key=take_num)
+    debug_images = np.array(data[:, 13], str)
 
     end_poses = []
     distances = []
     sim_real_errors = []
 
-    for i in range(camera_params.__len__()):
+    for i in range(camera_params.shape[1]):
 
-        image_path = os.path.join(debug_images, debug_images[i])
+        image_path = os.path.join(os.path.join(log_path, "inputs"), debug_images[i])
 
         image = Image.open(image_path)
 
@@ -116,12 +115,11 @@ def main(args):
         # Image -> Latent1
         latent1 = perception.get_latent(image)
 
-        camera_input = Variable(torch.Tensor(camera_params[i]).to(device))
+        camera_input = Variable(torch.Tensor(camera_params[:, i]).to(device))
         camera_input = camera_input.unsqueeze(0)
         latent1 = torch.cat([latent1, camera_input], 1)
 
         # latent and camera params -> latent2
-
         latent2 = policy(latent1)
         trajectories = traj_decoder(latent2)
 
@@ -135,6 +133,7 @@ def main(args):
         end_pose = end_effector_pose(end_joint_pose, device)
         end_pose = end_pose.cpu().detach().numpy()[0]
 
+        end_poses.append(end_pose)
         distance = np.linalg.norm(end_pose - cup_poses[i])
         distances.append(distance)
         sim_real_error = np.linalg.norm(end_pose - end_effector_poses[i])
@@ -146,7 +145,7 @@ def main(args):
     if not(os.path.exists(save_path)):
         os.makedirs(save_path)
 
-    f = open(os.path.join(save_path, 'avg_errors.npy'), 'w')
+    f = open(os.path.join(save_path, 'avg_errors_t_{}_w_{}_crops.txt'.format(args.top_crop, args.width_crop)), 'w')
     f.write("avg goal distance {}\n".format(np.mean(distances)))
 
     print("avg goal distance", np.mean(distances))
@@ -157,7 +156,9 @@ def main(args):
 
     fig, axes = plt.subplots(3, 3, sharex=True, figsize=[30, 30])
 
-    for i, cup_name in enumerate(CUP_NAMES):
+    cup_names = np.unique(np.array(data[:, 0], str))
+
+    for i, cup_name in enumerate(cup_names):
 
         ax = axes[int(i/3)][i%3]
         cup_indices = np.array([cup_name in s for s in data[:, 0]])
@@ -166,7 +167,7 @@ def main(args):
         pred_poses = end_poses[cup_indices]
 
         print(cup_name, 'avg goal error:', np.linalg.norm(goal_poses - pred_poses, axis=1).mean())
-        f.write("{} avg goal error {}\n".format(np.mean(cup_name, np.linalg.norm(goal_poses - pred_poses, axis=1).mean())))
+        f.write("{} avg goal error {}\n".format(cup_name, np.linalg.norm(goal_poses - pred_poses, axis=1).mean()))
 
         ax.scatter(goal_poses[:, 0], goal_poses[:, 1], c='r', label='real')
         ax.scatter(pred_poses[:, 0], pred_poses[:, 1], c='b', label='pred')
@@ -174,7 +175,7 @@ def main(args):
         if args.real_hw:
             hw_poses = end_effector_poses[cup_indices]
             print(cup_name, 'avg hw real error:', np.linalg.norm(hw_poses - pred_poses, axis=1).mean())
-            f.write("{} avg hw real error {}\n".format(np.linalg.norm(hw_poses - pred_poses, axis=1).mean()))
+            f.write("{} avg hw real error {}\n".format(cup_name, np.linalg.norm(hw_poses - pred_poses, axis=1).mean()))
             ax.scatter(hw_poses[:, 0], hw_poses[:, 1], c='g', label='hw')
 
         ax.set_title(cup_name)
@@ -182,7 +183,7 @@ def main(args):
         ax.set_ylabel('y')
         ax.legend()
 
-    plt.savefig(os.path.join(save_path, 'large_ds.png'))
+    plt.savefig(os.path.join(save_path, 'simulation_result_t_{}_w_{}_crops.png'.format(args.top_crop, args.width_crop)))
 
     if args.real_hw:
         np.save(os.path.join(save_path, 'results.npy'), (cup_poses, end_poses, hw_poses))
