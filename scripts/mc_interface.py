@@ -1,0 +1,69 @@
+from __future__ import with_statement
+from threading import Lock
+import rospy
+from motion_planning.hardware_interface import HardwareInterface
+from std_srvs import srv
+from motion_planning.srv import ChangePose, ChangePoseResponse, JointNames, JointNamesResponse, CurrentPose, CurrentPoseResponse
+from motion_planning.srv import RobotTrajectory, RobotTrajectoryResponse
+from motion_planning.srv import JointValues, JointValuesResponse
+
+import argparse
+
+parser = argparse.ArgumentParser(description='MC interface')
+parser.add_argument('--velocity-factor', default=0.1, type=float)
+parser.add_argument('--arm-name', default='lumi_arm', type=str)
+
+args = parser.parse_args()
+
+
+if __name__ == '__main__':
+
+    rospy.init_node('mc_interface')
+    planner = HardwareInterface(args.arm_name, args.velocity_factor)
+
+    lock = Lock()
+
+    def reset(req):
+        with lock:
+            planner.reset(None)
+        return srv.EmptyResponse()
+
+    def move_arm_to_position(req):
+
+        with lock:
+            plan = planner.move_arm_to_position(req.x, req.y, req.z)
+
+        if plan is None:
+            return ChangePoseResponse(False)
+        else:
+            return ChangePoseResponse(True)
+
+    def do_plan(req):
+        with lock:
+            succeed = planner.do_plan(req)
+        return RobotTrajectoryResponse(succeed)
+
+    def joint_names(req):
+        with lock:
+            names = planner.joint_names()
+        return JointNamesResponse(names)
+
+    def current_joint_values(req):
+        with lock:
+            joint_values = planner.current_joint_values()
+        return JointValuesResponse(joint_values)
+
+    def current_pose(req):
+        with lock:
+            current_pose_values = planner.current_pose()
+            print("current_pose_values", current_pose_values)
+        return CurrentPoseResponse(current_pose_values)
+
+    reset_service = rospy.Service('reset', srv.Empty, reset)
+    move_arm_service = rospy.Service('move_arm', ChangePose, move_arm_to_position)
+    do_plan_service = rospy.Service('do_plan', RobotTrajectory, do_plan)
+    joint_names_service = rospy.Service('joint_names', JointNames, joint_names)
+    current_joint_values_service = rospy.Service('joint_values', JointValues, current_joint_values)
+    current_pose_service = rospy.Service('current_pose', CurrentPose,  current_pose)
+
+    rospy.spin()

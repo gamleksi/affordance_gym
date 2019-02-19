@@ -8,7 +8,7 @@ from torch.autograd import Variable
 import matplotlib.pyplot as plt
 
 from motion_planning.simulation_interface import SimulationInterface
-from motion_planning.hardware_interface import HardwareInterface
+from motion_planning.remote_interface import RemoteMCInterface
 from motion_planning.perception_policy import Predictor
 from behavioural_vae.ros_monitor import ROSTrajectoryVAE
 from gibson.ros_monitor import RosPerceptionVAE
@@ -44,9 +44,6 @@ def change_camera_pose(sim, real_hw, debug):
             'default': False
         }
     ]
-
-
-
 
     while not(camera_found):
 
@@ -158,15 +155,15 @@ def main(args):
 
     # Simulation interface
     if args.real_hw:
-        planning_interface = HardwareInterface(arm_name='lumi_arm')
-        planning_interface.reset(0.0)
+        planning_interface = RemoteMCInterface()
+        planning_interface.reset(0)
     else:
         planning_interface = SimulationInterface(arm_name='lumi_arm')
         planning_interface.reset(duration=2.0)
 
     camera_params, log_cam_params = change_camera_pose(planning_interface, args.real_hw, args.debug)
 
-    env = TrajectoryEnv(action_vae, planning_interface, args.num_actions, num_joints=args.num_joints, trajectory_duration=0.5)
+    env = TrajectoryEnv(action_vae, planning_interface, args.num_actions, num_joints=args.num_joints, trajectory_duration=args.duration)
 
     app_questions = [
         {
@@ -263,9 +260,7 @@ def main(args):
 
         # Latent2 -> trajectory (mujoco)
         _, end_pose = env.do_latent_imitation(latent2[0])
-        end_pose = np.array((
-            end_pose.pose.position.x,
-            end_pose.pose.position.y))
+        end_pose = np.array(end_pose[:2])
 
         cup_x = float(cup_answers.get('x_pose'))
         cup_y = float(cup_answers.get('y_pose'))
