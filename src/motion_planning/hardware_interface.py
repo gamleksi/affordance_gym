@@ -1,10 +1,13 @@
 import numpy as np
-from motion_planning.simulation_interface import MCInterface
+import moveit_commander as mc
+from motion_planning.moveit_commander_interface import MCInterface
+
 
 class HardwareInterface(MCInterface):
 
-    def __init__(self, arm_name):
+    def __init__(self, arm_name, velocity_scaling_factor=0.2):
         super(HardwareInterface, self).__init__(arm_name)
+        self.arm_planner.set_max_velocity_scaling_factor(velocity_scaling_factor)
         self.reset(11)
 
     def reset(self, duration):

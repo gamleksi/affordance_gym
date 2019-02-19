@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_srvs
   std_msgs
+  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -50,6 +51,7 @@ catkin_python_setup()
 ##   * uncomment the generate_messages entry below
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
+
 ## Generate messages in the 'msg' folder
 # add_message_files(
 #   FILES
@@ -57,12 +59,16 @@ catkin_python_setup()
 #   Message2.msg
 # )
 
-## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+add_service_files(
+        FILES
+        ChangePose.srv
+        RobotTrajectory.srv
+        JointNames.srv
+        JointValues.srv
+        CurrentPose.srv
+)
+
+
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -71,11 +77,13 @@ catkin_python_setup()
 #   Action2.action
 # )
 
-## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   geometry_msgs#   moveit_msgs#   std_msgs
-# )
+# Generate added messages and services with any dependencies listed here
+generate_messages(
+   DEPENDENCIES
+   geometry_msgs
+   moveit_msgs
+   std_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##

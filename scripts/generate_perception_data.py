@@ -8,7 +8,7 @@ import pickle
 from motion_planning.utils import parse_arguments, GIBSON_ROOT, LOOK_AT, DISTANCE, AZIMUTH, ELEVATION, CUP_X_LIM, CUP_Y_LIM
 from motion_planning.utils import ELEVATION_EPSILON, AZIMUTH_EPSILON, DISTANCE_EPSILON, POLICY_ROOT, LOOK_AT_EPSILON, NO_CUP_SHOWN_POSE
 from motion_planning.simulation_interface import SimulationInterface
-from gibson.tools import affordance_to_array
+from gibson.tools import affordance_to_array, affordance_layers_to_array
 from gibson.ros_monitor import RosPerceptionVAE
 import itertools
 
@@ -16,7 +16,7 @@ import itertools
 NUM_RANDOM_OBJECTS = 15
 NUM_CUPS = 9
 
-def sample_visualize(image, affordance, model_path, id):
+def sample_visualize(image, affordance_arr, model_path, id):
 
     image = np.transpose(image, (1, 2, 0))
 
@@ -24,11 +24,15 @@ def sample_visualize(image, affordance, model_path, id):
     if not os.path.exists(sample_path):
         os.makedirs(sample_path)
 
-    affordance = affordance_to_array(affordance).transpose((1, 2, 0)) / 255.
+    affordance = affordance_to_array(affordance_arr).transpose((1, 2, 0)) / 255.
 
-    samples = np.stack((image, affordance))
+    affordance_layers = affordance_layers_to_array(affordance_arr) / 255.
+    affordance_layers = np.transpose(affordance_layers, (0, 2, 3, 1))
+    # affordance_layers = [layer for layer in affordance_layers]
 
-    fig, axeslist = plt.subplots(ncols=2, nrows=1, figsize=(30, 30))
+    samples = np.stack((image, affordance, affordance_layers[0], affordance_layers[1]))
+
+    fig, axeslist = plt.subplots(ncols=4, nrows=1, figsize=(30, 30))
 
     for idx in range(samples.shape[0]):
         axeslist.ravel()[idx].imshow(samples[idx], cmap=plt.jet())
