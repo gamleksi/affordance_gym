@@ -275,12 +275,11 @@ def main(args):
         sample_visualize(sample, affordance, os.path.join(save_path, 'kinect_results'), i)
 
         print("end_pose", end_pose)
-        env.reset_environment()
-
         # sim.reset_table(end_pose[0], end_pose[1], 0.0, 'box2')
         i += 1
 
         answers = prompt(app_questions, style=style)
+        env.reset_environment()
 
         if answers.get("run") != "r":
 
