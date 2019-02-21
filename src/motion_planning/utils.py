@@ -92,6 +92,11 @@ def parse_arguments(behavioural_vae=False, policy=False, gibson=False, debug=Fal
         parser.add_argument('--log-name', default='kinect_example', type=str)
         parser.add_argument('--top-crop', default=44, type=int)
         parser.add_argument('--width-crop', default=28, type=int)
+        parser.add_argument('--x-pose', default=None, type=float)
+        parser.add_argument('--y-pose', default=None, type=float)
+        parser.add_argument('--cup-type', default=None, type=str)
+        parser.add_argument('--random-objs', default=None, type=int)
+
 
     parser.add_argument('--debug', dest='debug', action='store_true')
 
@@ -222,4 +227,4 @@ AZIMUTH_EPSILON = 2.
 CUP_X_LIM = [0.4, 0.75]
 CUP_Y_LIM = [-0.20, 0.20]
 
-CUP_NAMES = ['rocket', 'karol', 'gray', 'can', 'blue', 'subway', 'yellow', 'mirror', 'red', 'other']
+CUP_NAMES = ['rocket', 'karol', 'gray', 'can', 'blue', 'subway', 'yellow', 'mirror', 'red', 'other', 'stack2', 'stack3', 'bag']

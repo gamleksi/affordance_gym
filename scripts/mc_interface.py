@@ -12,6 +12,7 @@ import argparse
 parser = argparse.ArgumentParser(description='MC interface')
 parser.add_argument('--velocity-factor', default=0.1, type=float)
 parser.add_argument('--arm-name', default='lumi_arm', type=str)
+parser.add_argument('--gripper-name', default=None, type=str)
 
 args = parser.parse_args()
 
@@ -19,7 +20,7 @@ args = parser.parse_args()
 if __name__ == '__main__':
 
     rospy.init_node('mc_interface')
-    planner = HardwareInterface(args.arm_name, args.velocity_factor)
+    planner = HardwareInterface(args.arm_name, args.gripper_name, args.velocity_factor)
 
     lock = Lock()
 
@@ -37,6 +38,16 @@ if __name__ == '__main__':
             return ChangePoseResponse(False)
         else:
             return ChangePoseResponse(True)
+
+    def gripper_close(req):
+        with lock:
+            planner.close_gripper()
+        return srv.EmptyResponse()
+
+    def gripper_open(req):
+        with lock:
+            planner.open_gripper()
+        return srv.EmptyResponse(
 
     def do_plan(req):
         with lock:
@@ -65,5 +76,7 @@ if __name__ == '__main__':
     joint_names_service = rospy.Service('joint_names', JointNames, joint_names)
     current_joint_values_service = rospy.Service('joint_values', JointValues, current_joint_values)
     current_pose_service = rospy.Service('current_pose', CurrentPose,  current_pose)
+    current_pose_service = rospy.Service('close_gripper', srv.Empty,  gripper_close)
+    current_pose_service = rospy.Service('open_gripper', srv.Empty,  gripper_open)
 
     rospy.spin()

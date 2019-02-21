@@ -8,8 +8,6 @@ from motion_planning.srv import RobotTrajectory, ChangePose, JointValues, JointN
 
 class RemoteMCInterface(object):
 
-   def gripper_open(self):
-       return NotImplementedError
 
    def current_joint_values(self):
 
@@ -52,7 +50,20 @@ class RemoteMCInterface(object):
        return pose
 
    def gripper_close(self):
-       return NotImplementedError
+       rospy.wait_for_service('close_gripper')
+       try:
+           close_service = rospy.ServiceProxy('close_gripper', srv.Empty)
+           close_service()
+       except rospy.ServiceException as exc:
+           print("Closing did not work:" + str(exc))
+
+   def gripper_open(self):
+       rospy.wait_for_service('open_gripper')
+       try:
+           close_service = rospy.ServiceProxy('open_gripper', srv.Empty)
+           close_service()
+       except rospy.ServiceException as exc:
+           print("Opening did not work:" + str(exc))
 
    def print_current_pose(self):
        return NotImplementedError
@@ -113,8 +124,8 @@ class RemoteMCInterface(object):
 
        listener = tf.TransformListener()
        try:
-           listener.waitForTransform('/base_link', '/camera_rgb_frame', rospy.Time(0), rospy.Duration(5))
-           (trans, rot) = listener.lookupTransform('/base_link', '/camera_rgb_frame', rospy.Time(0))
+           listener.waitForTransform('/panda_link0', '/camera_rgb_frame', rospy.Time(0), rospy.Duration(5))
+           (trans, rot) = listener.lookupTransform('/panda_link0', '/camera_rgb_frame', rospy.Time(0))
            return trans, rot
        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
            print(e)

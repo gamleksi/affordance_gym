@@ -26,6 +26,12 @@ class TrajectoryEnv(object):
 
         self.env_interface.reset(float(duration))
 
+    def gripper_open(self):
+        self.env_interface.gripper_open()
+
+    def gripper_close(self):
+        self.env_interface.gripper_close()
+
     def process_plan(self, plan):
 
         # Smooth plan to N steps

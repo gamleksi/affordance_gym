@@ -58,7 +58,7 @@ def main(args):
 
     rospy.init_node('talker', anonymous=True)
     rate = rospy.Rate(0.2)  # 10hz
-    sim = SimulationInterface(arm_name='lumi_arm')
+    sim = SimulationInterface(arm_name='panda_arm')
 
     # kinect_service = '/camera/rgb/image_raw'
 

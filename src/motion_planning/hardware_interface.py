@@ -5,8 +5,8 @@ from motion_planning.moveit_commander_interface import MCInterface
 
 class HardwareInterface(MCInterface):
 
-    def __init__(self, arm_name, velocity_scaling_factor=0.2):
-        super(HardwareInterface, self).__init__(arm_name)
+    def __init__(self, arm_name, gripper_name, velocity_scaling_factor=0.2):
+        super(HardwareInterface, self).__init__(arm_name, gripper_name=gripper_name)
         self.arm_planner.set_max_velocity_scaling_factor(velocity_scaling_factor)
         self.reset(11)
 

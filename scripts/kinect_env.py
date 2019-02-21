@@ -158,6 +158,7 @@ def main(args):
         planning_interface = RemoteMCInterface()
         planning_interface.reset(0)
     else:
+        # planning_interface = SimulationInterface(arm_name='lumi_arm', gripper_name='lumi_hand')
         planning_interface = SimulationInterface(arm_name='lumi_arm')
         planning_interface.reset(duration=2.0)
 
@@ -189,7 +190,7 @@ def main(args):
 
     cup_log = {}
     for cup_name in CUP_NAMES:
-        cup_log[cup_name] = [[], [], [], []] # Target Pose, End Effector Pose, error sum
+        cup_log[cup_name] = [[], [], [], [], []] # Target Pose, End Effector Pose, error sum
 
     log_path = os.path.join(save_path, 'cup_log.csv')
 
@@ -200,7 +201,7 @@ def main(args):
         writer = csv.writer(f)
         writer.writerow(['cup_type', 'cup_x', 'cup_y', 'end_pose_x', 'end_pose_y',
                  'kinect_lookat_x', 'kinect_lookat_y', 'kinect_distance', 'kinect_azimuth',
-                         'kinect_elevation', 'roll', 'top_crop', 'width_crop', 'image_file'])
+                         'kinect_elevation', 'roll', 'top_crop', 'width_crop', 'image_file', 'num_random_objects'])
         f.close()
     else:
         previous_data = pd.read_csv(log_path)
@@ -216,30 +217,55 @@ def main(args):
 
         i = len(os.listdir(os.path.join(save_path, 'inputs')))
 
+    cup_questions = []
+
+    if args.x_pose is None:
+       cup_questions.append({
+               'type': 'input',
+               'name': 'x_pose',
+               'message': 'X position of the cup'
+           })
+
+
+    if args.y_pose is None:
+       cup_questions.append({
+               'type': 'input',
+               'name': 'y_pose',
+               'message': 'Y position of the cup'
+           })
+
+    if args.cup_type is None:
+       cup_questions.append({
+               'type': 'list',
+               'name': 'cup_type',
+               'message': 'What is the cup type?',
+               'choices': CUP_NAMES
+           })
+
+    if args.random_objs is None:
+
+       cup_questions.append(
+           {
+               'type': 'input',
+               'name': 'random_objs',
+               'message': 'Number of random objects?'
+           }
+       )
+
+    # env.gripper_open()
     while run_experiment:
 
         if change_camera:
             camera_params, log_cam_params = change_camera_pose(planning_interface, args.real_hw, args.debug)
 
-        cup_questions = [
-            {
-                'type': 'list',
-                'name': 'cup_type',
-                'message': 'What is the cup type?',
-                'choices': CUP_NAMES
-            },
-            {
-                'type': 'input',
-                'name': 'x_pose',
-                'message': 'X pose of the cup?'
-            },
-            {
-                'type': 'input',
-                'name': 'y_pose',
-                'message': 'Y pose of the cup?'
-            }
-        ]
         cup_answers = prompt(cup_questions)
+        # env.gripper_close()
+
+        cup_x = float(cup_answers.get('x_pose')) if (args.x_pose is None) else args.x_pose
+        cup_y = float(cup_answers.get('y_pose'))  if (args.y_pose is None) else args.y_pose
+        cup_type = str(cup_answers.get('cup_type'))  if (args.cup_type is None) else args.cup_type
+
+        num_random_objects = int(cup_answers.get('random_objs'))  if (args.random_objs is None) else args.random_objs
 
         image_arr = planning_interface.capture_image(kinect_service)
         image = Image.fromarray(image_arr)
@@ -262,21 +288,17 @@ def main(args):
         _, end_pose = env.do_latent_imitation(latent2[0])
         end_pose = np.array(end_pose[:2])
 
-        cup_x = float(cup_answers.get('x_pose'))
-        cup_y = float(cup_answers.get('y_pose'))
-        cup_type = str(cup_answers.get('cup_type'))
-
         print('distance error', np.linalg.norm(np.array([cup_x, cup_y]) - end_pose))
         sample_visualize(sample, affordance, os.path.join(save_path, 'kinect_results'), i)
 
         print("end_pose", end_pose)
-        # sim.reset_table(end_pose[0], end_pose[1], 0.0, 'box2')
-        i += 1
+        # env.gripper_open()
 
         answers = prompt(app_questions, style=style)
         env.reset_environment()
 
         if answers.get("run") != "r":
+            i += 1
 
             image.save(os.path.join(save_path, 'inputs', 'sample_{}.png'.format(i)))
 
@@ -284,6 +306,7 @@ def main(args):
             cup_log[cup_type][1].append(cup_y)
             cup_log[cup_type][2].append(end_pose[0])
             cup_log[cup_type][3].append(end_pose[1])
+            cup_log[cup_type][4].append(num_random_objects)
 
             plt.figure(figsize=(5, 10))
             plt.scatter(cup_log[cup_type][0], cup_log[cup_type][1], label='cup pos', c='r')
@@ -296,7 +319,7 @@ def main(args):
             writer = csv.writer(f)
             writer.writerow([cup_type, cup_x, cup_y, end_pose[0], end_pose[1],
                log_cam_params[0], log_cam_params[1], log_cam_params[2], log_cam_params[3],
-                             log_cam_params[4], log_cam_params[5], args.top_crop, args.width_crop, 'sample_{}.png'.format(i)])
+                             log_cam_params[4], log_cam_params[5], args.top_crop, args.width_crop, 'sample_{}.png'.format(i), num_random_objects])
             f.close()
 
             if answers.get("run") == "y":

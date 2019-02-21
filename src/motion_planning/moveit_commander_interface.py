@@ -82,10 +82,12 @@ class MCInterface(object):
 
         mc.roscpp_initialize(sys.argv)
 
+        self.robot = mc.RobotCommander()
+
         self.arm_planner = self.build_planning_interface(arm_name, planning_id)
 
         if gripper_name is not None:
-            self.gripper_planner = self.build_planning_interface(gripper_name, planning_id)
+            self.gripper_planner = mc.MoveGroupCommander(gripper_name)
             self.gripper_open_values = GRIPPER_OPEN_VALUES
         else:
             self.gripper_planner = None
@@ -104,8 +106,7 @@ class MCInterface(object):
     def gripper_open(self):
 
         if self.gripper_planner is not None:
-            self.gripper_planner.set_joint_value_target(
-                            self.gripper_open_values)
+            self.gripper_planner.set_joint_value_target(self.gripper_open_values)
             self.gripper_planner.plan()
             self.gripper_planner.go(wait=True)
 
@@ -121,7 +122,8 @@ class MCInterface(object):
 
     def gripper_close(self):
         if self.gripper_planner is not None:
-            self.gripper_planner.set_joint_value_target([0., 0.])
+            import pdb; pdb.set_trace()
+            self.gripper_planner.set_joint_value_target([0.01, 0.01])
             self.gripper_planner.plan()
             self.gripper_planner.go(wait=True)
 
@@ -189,3 +191,11 @@ class MCInterface(object):
         except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException) as e:
             print(e)
             return None, None
+
+
+if __name__ == '__main__':
+    import rospy
+    rospy.init_node('talker', anonymous=True)
+    planner = MCInterface('panda_arm', 'hand')
+    planner.gripper_close()
+    planner.gripper_open()
