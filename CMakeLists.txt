@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(motion_planning)
+project(affordance_gym)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -116,7 +116,7 @@ generate_messages(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES motion_planning
+#  LIBRARIES affordance_gym
 #  CATKIN_DEPENDS geometry_msgs moveit_commander moveit_msgs roscpp rospy std_srvs stds_msgs
 #  DEPENDS system_lib
 )
@@ -134,7 +134,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/motion_planning.cpp
+#   src/${PROJECT_NAME}/affordance_gym.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -145,7 +145,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/motion_planning_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/affordance_gym.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
