@@ -6,19 +6,34 @@ from torch.utils import data
 from torch.nn import functional as F
 import numpy as np
 
-from motion_planning.utils import parse_arguments, GIBSON_ROOT, POLICY_ROOT, BEHAVIOUR_ROOT, save_arguments, use_cuda
-from motion_planning.utils import plot_loss, plot_scatter, plot_latent_distributions
-from motion_planning.utils import LOOK_AT, DISTANCE, AZIMUTH, ELEVATION, ELEVATION_EPSILON, AZIMUTH_EPSILON, DISTANCE_EPSILON, LOOK_AT_EPSILON
+from affordance_gym.utils import parse_arguments,  save_arguments, use_cuda
+from affordance_gym.utils import plot_loss, plot_scatter, plot_latent_distributions
+from affordance_gym.perception_policy import end_effector_pose, Predictor
 
-from motion_planning.perception_policy import end_effector_pose, Predictor
-from behavioural_vae.utils import MIN_ANGLE, MAX_ANGLE
-from behavioural_vae.ros_monitor import ROSTrajectoryVAE
 
+from env_setup.env_setup import LOOK_AT, DISTANCE, AZIMUTH, ELEVATION, ELEVATION_EPSILON, AZIMUTH_EPSILON, DISTANCE_EPSILON, LOOK_AT_EPSILON
+from env_setup.env_setup import VAED_MODELS_PATH, POLICY_MODELS_PATH, TRAJ_MODELS_PATH
+
+from TrajectoryVAE.utils import MIN_ANGLE, MAX_ANGLE
+from TrajectoryVAE.ros_monitor import ROSTrajectoryVAE
+
+
+'''
+
+Trains the affordance policy in a supervised manner with previously generated training data (generate_perception_data.py). 
+
+ROS is not needed.
+
+The final position of the end effector is solved by solving the forward kinematics of the larg joint pose (the end_effector_pose function).
+
+The forward kinematics solver is included to the PyTorch computation graph. 
+
+'''
 
 
 def load_dataset(perception_name, fixed_camera, debug):
 
-    data_path = os.path.join(GIBSON_ROOT, perception_name, 'mujoco_latents')
+    data_path = os.path.join(VAED_MODELS_PATH, perception_name, 'mujoco_latents')
     data_files = os.listdir(data_path)
 
     if debug:
@@ -109,14 +124,14 @@ def load_dataset(perception_name, fixed_camera, debug):
 
 def main(args):
 
-    save_path = os.path.join(POLICY_ROOT, args.policy_name)
+    save_path = os.path.join(POLICY_MODELS_PATH, args.policy_name)
     save_arguments(args, save_path)
 
     device = use_cuda()
 
     assert(args.model_index > 0)
 
-    action_vae = ROSTrajectoryVAE(os.path.join(BEHAVIOUR_ROOT, args.vae_name), args.latent_dim, args.num_actions,
+    action_vae = ROSTrajectoryVAE(os.path.join(TRAJ_MODELS_PATH, args.vae_name), args.latent_dim, args.num_actions,
                                        model_index=args.model_index, num_joints=args.num_joints)
 
     # Trajectory generator
@@ -252,12 +267,12 @@ def main(args):
             best_val = avg_loss
             torch.save(policy.state_dict(), os.path.join(save_path, '{}_model.pth.tar'.format(epoch)))
 
-        # plot_scatter(train_poses, train_targets, os.path.join(save_path, 'train_scatter.png'))
-        # plot_scatter(val_poses, val_targets, os.path.join(save_path, 'val_scatter.png'))
-        # poses = np.concatenate([train_poses, val_poses])
-        # targets = np.concatenate([train_targets, val_targets])
-        # plot_scatter(poses, targets, os.path.join(save_path, 'full_scatter.png'))
-        # plot_latent_distributions(latents, os.path.join(save_path, 'latents_distribution.png'))
+        plot_scatter(train_poses, train_targets, os.path.join(save_path, 'train_scatter.png'))
+        plot_scatter(val_poses, val_targets, os.path.join(save_path, 'val_scatter.png'))
+        poses = np.concatenate([train_poses, val_poses])
+        targets = np.concatenate([train_targets, val_targets])
+        plot_scatter(poses, targets, os.path.join(save_path, 'full_scatter.png'))
+        plot_latent_distributions(latents, os.path.join(save_path, 'latents_distribution.png'))
 
         plot_loss(avg_train_losses, avg_val_losses, 'Avg mse', os.path.join(save_path, 'avg_mse.png'))
         plot_loss(np.log(avg_train_losses), np.log(avg_val_losses), 'Avg mse in log scale', os.path.join(save_path, 'avg_log_mse.png'))

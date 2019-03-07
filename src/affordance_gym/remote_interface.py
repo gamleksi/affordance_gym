@@ -4,7 +4,14 @@ import cv_bridge
 from sensor_msgs.msg import Image
 import tf
 from std_srvs import srv
-from motion_planning.srv import RobotTrajectory, ChangePose, JointValues, JointNames, CurrentPose
+from affordance_gym.srv import RobotTrajectory, ChangePose, JointValues, JointNames, CurrentPose
+
+'''
+
+This process should run in the same server, as the main roscore.  
+This setup was introduced, because there was a different ros version in the robot's computer than in the 'policy' computer.    
+
+'''
 
 class RemoteMCInterface(object):
 

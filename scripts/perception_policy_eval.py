@@ -3,34 +3,42 @@ import numpy as np
 from PIL import Image
 import torch
 from torch.autograd import Variable
+import rospy
 
-from motion_planning.simulation_interface import SimulationInterface
-from motion_planning.perception_policy import Predictor
-from behavioural_vae.ros_monitor import ROSTrajectoryVAE
-from gibson.ros_monitor import RosPerceptionVAE
+from affordance_gym.simulation_interface import SimulationInterface
+from affordance_gym.perception_policy import Predictor
+from affordance_gym.utils import parse_arguments, load_parameters,  use_cuda
 
-from motion_planning.utils import parse_arguments, GIBSON_ROOT, load_parameters, BEHAVIOUR_ROOT, POLICY_ROOT, use_cuda
-from motion_planning.utils import LOOK_AT, DISTANCE, AZIMUTH, ELEVATION, CUP_X_LIM, CUP_Y_LIM
-from motion_planning.utils import ELEVATION_EPSILON, AZIMUTH_EPSILON, DISTANCE_EPSILON
-from motion_planning.monitor import TrajectoryEnv
+from affordance_gym.monitor import TrajectoryEnv
+
+from env_setup.env_setup import ELEVATION_EPSILON, AZIMUTH_EPSILON, DISTANCE_EPSILON,  VAED_MODELS_PATH, TRAJ_MODELS_PATH, POLICY_MODELS_PATH
+from env_setup.env_setup import LOOK_AT, DISTANCE, AZIMUTH, ELEVATION, CUP_X_LIM, CUP_Y_LIM
+
+from TrajectoryVAE.ros_monitor import ROSTrajectoryVAE
+from AffordanceVAED.ros_monitor import RosPerceptionVAE
+
+
+'''
+
+Evaluates the performance of the affordance policy in MuJoCo
+
+'''
 
 
 def main(args):
 
+    rospy.init_node('talker', anonymous=True)
+
     device = use_cuda()
 
     # Trajectory generator
-    # TODO Currently includes both encoder and decoder to GPU even though only encoder is used.
-
     assert(args.model_index > -1)
 
-    bahavior_model_path = os.path.join(BEHAVIOUR_ROOT, args.vae_name)
+    bahavior_model_path = os.path.join(TRAJ_MODELS_PATH, args.vae_name)
     action_vae = ROSTrajectoryVAE(bahavior_model_path, args.latent_dim, args.num_actions,
                                   model_index=args.model_index, num_joints=args.num_joints)
     # pereception
-    # TODO Currently includes both encoder and decoder to GPU even though only encoder is used.
-
-    gibson_model_path = os.path.join(GIBSON_ROOT, args.g_name)
+    gibson_model_path = os.path.join(VAED_MODELS_PATH, args.g_name)
     perception = RosPerceptionVAE(gibson_model_path, args.g_latent)
 
     # Policy
@@ -43,7 +51,7 @@ def main(args):
 
     policy.to(device)
 
-    policy_path = os.path.join(POLICY_ROOT, args.policy_name)
+    policy_path = os.path.join(POLICY_MODELS_PATH, args.policy_name)
     load_parameters(policy, policy_path, 'model')
 
     # Simulation interface
@@ -78,8 +86,6 @@ def main(args):
         image_arr = sim.capture_image()
         image = Image.fromarray(image_arr)
 
-        # affordance, sample = perception.reconstruct(image) TODO sample visualize
-
         # Image -> Latent1
         latent1 = perception.get_latent(image)
 
@@ -92,11 +98,9 @@ def main(args):
             camera_params = camera_params.unsqueeze(0)
             latent1 = torch.cat([latent1, camera_params], 1)
 
-            # TODO Combine latent1 with normalized camera params
-
         # latent and camera params -> latent2
         latent2 = policy(latent1)
-        latent2 = latent2.detach().cpu().numpy() # TODO fix this!
+        latent2 = latent2.detach().cpu().numpy()
 
         # Latent2 -> trajectory (mujoco)
         _, end_pose = env.do_latent_imitation(latent2[0])
@@ -106,7 +110,6 @@ def main(args):
 
         reward = np.linalg.norm(np.array([x, y]) - end_pose)
         rewards.append(reward)
-        # env.reset_environment(duration=3.0)
 
         print('Reward: {}'.format(reward))
         print("goal", x, y)

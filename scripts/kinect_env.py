@@ -7,17 +7,21 @@ import pandas as pd
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
 
-from motion_planning.simulation_interface import SimulationInterface
-from motion_planning.remote_interface import RemoteMCInterface
-from motion_planning.perception_policy import Predictor
-from behavioural_vae.ros_monitor import ROSTrajectoryVAE
-from gibson.ros_monitor import RosPerceptionVAE
+from affordance_gym.simulation_interface import SimulationInterface
+from affordance_gym.remote_interface import RemoteMCInterface
+from affordance_gym.perception_policy import Predictor
+
+from affordance_gym.utils import parse_arguments, sample_visualize, load_parameters, use_cuda
+from affordance_gym.monitor import TrajectoryEnv
+
+from env_setup.env_setup import DISTANCE, AZIMUTH, ELEVATION,  LOOK_AT, LOOK_AT_EPSILON, CUP_NAMES, KINECT_EXPERIMENTS_PATH
+from env_setup.env_setup import ELEVATION_EPSILON, AZIMUTH_EPSILON, DISTANCE_EPSILON, VAED_MODELS_PATH, TRAJ_MODELS_PATH, POLICY_MODELS_PATH
+
+from TrajectoryVAE.ros_monitor import ROSTrajectoryVAE
+from AffordanceVAED.ros_monitor import RosPerceptionVAE
+
 from tf.transformations import euler_from_quaternion, quaternion_matrix
 
-from motion_planning.utils import parse_arguments, GIBSON_ROOT, load_parameters, BEHAVIOUR_ROOT, POLICY_ROOT, use_cuda
-from motion_planning.utils import DISTANCE, AZIMUTH, ELEVATION, sample_visualize, LOOK_AT, LOOK_AT_EPSILON, CUP_NAMES, KINECT_EXPERIMENTS_PATH
-from motion_planning.utils import ELEVATION_EPSILON, AZIMUTH_EPSILON, DISTANCE_EPSILON
-from motion_planning.monitor import TrajectoryEnv
 from PyInquirer import prompt, style_from_dict, Token
 import rospy
 
@@ -29,6 +33,13 @@ style = style_from_dict({
     Token.Answer: '#2196f3 bold',
     Token.Question: '',
 })
+
+
+'''
+
+Setup for doing real experiments
+
+'''
 
 
 def change_camera_pose(sim, real_hw, debug):
@@ -135,30 +146,33 @@ def main(args):
     rospy.init_node('talker', anonymous=True)
     device = use_cuda()
 
-   # Trajectory generator
-   # TODO Currently includes both encoder and decoder to GPU even though only encoder is used.
+    # Trajectory generator
     assert(args.model_index > -1)
 
-    bahavior_model_path = os.path.join(BEHAVIOUR_ROOT, args.vae_name)
+    bahavior_model_path = os.path.join(TRAJ_MODELS_PATH, args.vae_name)
     action_vae = ROSTrajectoryVAE(bahavior_model_path, args.latent_dim, args.num_actions,
                                   model_index=args.model_index, num_joints=args.num_joints)
-   # pereception
-   # TODO Currently includes both encoder and decoder to GPU even though only encoder is used.
-    gibson_model_path = os.path.join(GIBSON_ROOT, args.g_name)
+
+    # pereception
+    gibson_model_path = os.path.join(VAED_MODELS_PATH, args.g_name)
     perception = RosPerceptionVAE(gibson_model_path, args.g_latent)
 
     # Policy
     policy = Predictor(args.g_latent + 5, args.latent_dim, args.num_params)
     policy.to(device)
-    policy_path = os.path.join(POLICY_ROOT, args.policy_name)
+    policy_path = os.path.join(POLICY_MODELS_PATH, args.policy_name)
     load_parameters(policy, policy_path, 'model')
 
     # Simulation interface
     if args.real_hw:
+
+        assert(args.duration > 5) # this ensures that nothing dangerous happens :D
+
         planning_interface = RemoteMCInterface()
         planning_interface.reset(0)
     else:
         # planning_interface = SimulationInterface(arm_name='lumi_arm', gripper_name='lumi_hand')
+
         planning_interface = SimulationInterface(arm_name='lumi_arm')
         planning_interface.reset(duration=2.0)
 
@@ -185,8 +199,8 @@ def main(args):
     change_camera = False
 
     i = 0
-    kinect_service = '/camera/rgb/image_raw' # TODO rectified service?
 
+    kinect_service = '/camera/rgb/image_raw'
 
     cup_log = {}
     for cup_name in CUP_NAMES:

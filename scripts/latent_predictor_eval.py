@@ -1,28 +1,38 @@
 import os
 import torch
-from behavioural_vae.ros_monitor import ROSTrajectoryVAE, RosTrajectoryConvVAE
-from behavioural_vae.latent_predicor import Predictor
-from motion_planning.simulation_interface import SimulationInterface
-from motion_planning.utils import parse_arguments, BEHAVIOUR_ROOT, load_parameters, use_cuda, LUMI_X_LIM, LUMI_Y_LIM
-from motion_planning.monitor import TrajectoryEnv
-from motion_planning.rl_env import SimpleEnvironment
-from motion_planning.policy_gradient import PolicyGradient
+from TrajectoryVAE.ros_monitor import ROSTrajectoryVAE
+from TrajectoryVAE.latent_predicor import Predictor
+
+from affordance_gym.simulation_interface import SimulationInterface
+from affordance_gym.utils import parse_arguments, load_parameters, use_cuda
+from affordance_gym.monitor import TrajectoryEnv
+from affordance_gym.rl_env import SimpleEnvironment
+
+from env_setup.env_setup import TRAJ_MODELS_PATH, LUMI_X_LIM, LUMI_Y_LIM
+
 import numpy as np
+import rospy
 from torch.autograd import Variable
 np.random.seed(10)
+
+
+'''
+For debugging: how well the trajecory VAE (the latent space and decoder) works without the perception part. 
+
+Task of the policy: a goal end effector position -> a latent action -> a trajectory 
+
+Trained: in TrajecotyVAE's latent_predictor.py with a generated trajectory dataset. 
+
+'''
+
 
 def main(args):
 
     device = use_cuda()
 
-    model_index = args.model_index
+    rospy.init_node('talker', anonymous=True)
 
-    if args.conv:
-        behaviour_model = RosTrajectoryConvVAE(args.vae_name, args.latent_dim, args.num_actions, args.kernel_row, args.conv_channel)
-    else:
-
-        behaviour_model = ROSTrajectoryVAE(args.vae_name, args.latent_dim, args.num_actions,
-                                           model_index=model_index, num_joints=args.num_joints,  root_path=BEHAVIOUR_ROOT)
+    behaviour_model =  ROSTrajectoryVAE(os.path.join(TRAJ_MODELS_PATH, args.vae_name), args.latent_dim, args.num_actions, model_index=args.model_index, num_joints=args.num_joints)
 
     simulation_interface = SimulationInterface('lumi_arm')
     trajectory_model = TrajectoryEnv(behaviour_model, simulation_interface, args.num_actions, num_joints=args.num_joints, trajectory_duration=args.duration)
@@ -32,12 +42,9 @@ def main(args):
 
     policy = Predictor(args.latent_dim)
     policy.to(device)
-    load_parameters(policy, os.path.join(BEHAVIOUR_ROOT, 'pred_log', args.policy_name), 'model')
-
-   # algo = PolicyGradient(env, policy, 1e-3, device)
+    load_parameters(policy, os.path.join(TRAJ_MODELS_PATH, 'pred_log', args.policy_name), 'model')
 
     rewards = np.zeros(args.num_steps)
-
 
     def do_action(state):
 
@@ -66,18 +73,18 @@ def main(args):
         goals = [(LUMI_X_LIM[0] + 0.1, LUMI_Y_LIM[0] + 0.1), (LUMI_X_LIM[1], LUMI_Y_LIM[0] + 0.1),
                  (LUMI_X_LIM[0] + 0.1, LUMI_Y_LIM[1] - 0.15), (LUMI_X_LIM[1], LUMI_Y_LIM[1] - 0.15)]
 
-
         for goal in goals:
+
             state = torch.Tensor(goal).unsqueeze(0).to(device)
             end_pose = do_action(state)
             reward = env.get_reward(goal, end_pose - np.array([-0.4, 0.15, 0.0]), train=False)
-
             print("goal", goal)
             print("end_pose", end_pose - np.array([-0.4, 0.15, 0.0]))
             print('Reward: {}'.format(reward))
             env.reset()
-            # print("end_pose abs", np.abs(end_pose[:2] - goal[:2]))
+
 
 if __name__ == '__main__':
+
     args = parse_arguments(behavioural_vae=True, feedforward=True)
     main(args)

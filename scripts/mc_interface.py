@@ -1,11 +1,11 @@
 from __future__ import with_statement
 from threading import Lock
 import rospy
-from motion_planning.hardware_interface import HardwareInterface
+from affordance_gym.hardware_interface import HardwareInterface
 from std_srvs import srv
-from motion_planning.srv import ChangePose, ChangePoseResponse, JointNames, JointNamesResponse, CurrentPose, CurrentPoseResponse
-from motion_planning.srv import RobotTrajectory, RobotTrajectoryResponse
-from motion_planning.srv import JointValues, JointValuesResponse
+from affordance_gym.srv import ChangePose, ChangePoseResponse, JointNames, JointNamesResponse, CurrentPose, CurrentPoseResponse
+from affordance_gym.srv import RobotTrajectory, RobotTrajectoryResponse
+from affordance_gym.srv import JointValues, JointValuesResponse
 
 import argparse
 
@@ -47,7 +47,7 @@ if __name__ == '__main__':
     def gripper_open(req):
         with lock:
             planner.open_gripper()
-        return srv.EmptyResponse(
+        return srv.EmptyResponse()
 
     def do_plan(req):
         with lock:

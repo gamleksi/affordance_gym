@@ -1,16 +1,22 @@
 #!/usr/bin/env python
 
-import sys
 import rospy
 import numpy as np
 import random
-from motion_planning.moveit_commander_interface import MCInterface
+from affordance_gym.moveit_commander_interface import MCInterface
 from mujoco_ros_control.srv import ChangeCupPose, ChangeCameraParams
 from std_srvs.srv import Empty
-from motion_planning.utils import LUMI_Y_LIM, LUMI_X_LIM, LUMI_Z_LIM
+from affordance_gym.utils import LUMI_Y_LIM, LUMI_X_LIM, LUMI_Z_LIM
 
 
 GRIPPER_POSITION_LIMITS = (LUMI_X_LIM, LUMI_Y_LIM, LUMI_Z_LIM)
+
+
+'''
+
+MUJOCO simulation interface
+
+'''
 
 
 class SimulationInterface(MCInterface):
@@ -92,8 +98,8 @@ class SimulationInterface(MCInterface):
 
 
 from moveit_msgs.msg import RobotTrajectory, genpy
-from motion_planning.srv import RobotTrajectoryRequest
 from moveit_msgs.msg import _RobotTrajectory
+from affordance_gym.srv import RobotTrajectoryRequest
 
 
 class CommunicationHandler(object):
@@ -110,7 +116,7 @@ class CommunicationHandler(object):
         trajectory = trajectory.transpose(1, 0)
 
         trajectory = np.concatenate((self.initial_joints, trajectory))
-        num_steps = len(trajectory + 1) # ??
+        num_steps = len(trajectory + 1)
         time_steps = np.linspace(0, self.duration, num_steps)
 
         points = []

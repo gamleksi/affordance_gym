@@ -5,6 +5,12 @@ import csv
 import torch
 import pandas as pd
 
+'''
+
+This file is only used in the latent predictor eval experiment (for debugging)
+
+'''
+
 
 class Logger(object):
 

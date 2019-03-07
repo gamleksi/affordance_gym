@@ -1,33 +1,41 @@
 #! /usr/bin/env python
-from motion_planning.simulation_interface import SimulationInterface
-from motion_planning.utils import LUMI_X_LIM, LUMI_Y_LIM, LUMI_Z_LIM
-from motion_planning.trajectory_parser import TrajectoryParser, parse_trajectory
-from behavioural_vae.utils import smooth_trajectory, MAX_ANGLE, MIN_ANGLE
 import os
 import numpy as np
 import rospy
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import argparse
 
+from affordance_gym.simulation_interface import SimulationInterface
+from affordance_gym.trajectory_parser import TrajectoryParser, parse_trajectory
+from TrajectoryVAE.utils import smooth_trajectory, MAX_ANGLE, MIN_ANGLE
+
+from env_setup.env_setup import LUMI_X_LIM, LUMI_Y_LIM, LUMI_Z_LIM
+
 parser = argparse.ArgumentParser(description='Trajectory Generator Arguments')
-parser.add_argument('--save-folder', default='example', type=str, help='')
+
+parser.add_argument('--save-folder', default='example', type=str, help='folder name')
+parser.add_argument('--save-root', default='../trajectory_data', type=str, help='data path')
+
 parser.add_argument('--num-samples', default=64, type=int, help='Number of samples')
-parser.add_argument('--num-joints', default=7, type=int, help='')
-parser.add_argument('--epsilon', default=0.04, type=float, help='')
-parser.add_argument("--debug", help="Generate Trjectory Samples",
-                    action="store_true")
-parser.add_argument("--rtt-star", help="Use RTTStar",
-                    action="store_true")
+parser.add_argument('--num-joints', default=7, type=int, help='The Number of robot joints')
+
+parser.add_argument("--debug", action="store_true", help='Explore manipulator results')
+parser.add_argument('--epsilon', default=0.04, type=float, help='For debugging the stochasticity of the manipulation algorithm')
+parser.add_argument("--rtt-star", help="Use RTTStar", action="store_true")
+parser.add_argument()
 
 args = parser.parse_args()
 
-ROOT_PATH = '../trajectory_data'
-SAVE_PATH = os.path.join(ROOT_PATH, args.save_folder)
 
-NUM_SAMPLES = args.num_samples
-NUM_JOINTS = args.num_joints
+'''
+
+Generates training data for the trajectory VAE.
+Only MoveIt should be running simultaneously
+
+'''
 
 
 def plot_trajectory(trajectories, image, path, normalized):
@@ -58,6 +66,10 @@ def plot_trajectory(trajectories, image, path, normalized):
 
 if __name__ == '__main__':
 
+    rospy.init_node('talker', anonymous=True)
+
+    save_path = os.path.join(args.save_root, args.save_folder)
+
     if args.rtt_star:
         planning_id = "RRTstar"
     else:
@@ -71,7 +83,7 @@ if __name__ == '__main__':
 
     if args.debug:
 
-        steps = np.int(np.sqrt(NUM_SAMPLES))
+        steps = np.int(np.sqrt(args.num_samples))
         if not(os.path.exists(args.save_folder)):
             os.makedirs(args.save_folder)
 
@@ -90,7 +102,7 @@ if __name__ == '__main__':
 
             plan = simulation_interface.plan_end_effector_to_position(x_p=x, y_p=y, z_p=LUMI_Z_LIM[0])
             time_steps_raw, positions_raw, _, _ = parse_trajectory(plan)
-            _, trajectory, _, _ = smooth_trajectory(time_steps_raw, positions_raw, 24, NUM_JOINTS)
+            _, trajectory, _, _ = smooth_trajectory(time_steps_raw, positions_raw, 24, args.num_joints)
             trajectories.append(trajectory)
 
             neighbors = 5
@@ -102,7 +114,7 @@ if __name__ == '__main__':
 
                 plan = simulation_interface.plan_end_effector_to_position(x_p=x_p, y_p=y_p, z_p=LUMI_Z_LIM[0])
                 time_steps_raw, positions_raw, _, _ = parse_trajectory(plan)
-                _, trajectory, _, _ = smooth_trajectory(time_steps_raw, positions_raw, 24, NUM_JOINTS)
+                _, trajectory, _, _ = smooth_trajectory(time_steps_raw, positions_raw, 24, args.num_joints)
                 trajectories.append(trajectory)
 
             print("Trajectory", i)
@@ -126,7 +138,7 @@ if __name__ == '__main__':
 
     else:
 
-        trajectory_saver = TrajectoryParser(SAVE_PATH, 'trajectories', NUM_JOINTS)
+        trajectory_saver = TrajectoryParser(save_path, 'trajectories', args.num_joints)
         rospy.on_shutdown(trajectory_saver.save)
         i = 0
 

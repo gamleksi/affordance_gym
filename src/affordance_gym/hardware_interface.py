@@ -1,6 +1,13 @@
 import numpy as np
-import moveit_commander as mc
-from motion_planning.moveit_commander_interface import MCInterface
+from affordance_gym.moveit_commander_interface import MCInterface
+
+
+
+'''
+
+A Moveit interface for a Panda Franka 
+
+'''
 
 
 class HardwareInterface(MCInterface):
@@ -31,5 +38,6 @@ class HardwareInterface(MCInterface):
         return succeed
 
 if __name__ == '__main__':
-    planner = HardwareInterface(arm_name='lumi_arm')
+
+    planner = HardwareInterface('lumi_arm', 'lumi_hand')
     print(planner.reset(11))

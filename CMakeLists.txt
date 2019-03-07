@@ -172,9 +172,13 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 install(PROGRAMS
-   scripts/run.py
-   scripts/rl_run.py
    scripts/generate_trajectories.py
+   scripts/generate_perception_data.py
+   scripts/perception_policy_eval.py
+   scripts/kinect_env.py
+   scripts/kinect_test.py
+   scripts/mc_interface.py
+   scripts/perception_policy_eval.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

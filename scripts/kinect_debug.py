@@ -1,53 +1,28 @@
 import os
-# import csv
 import numpy as np
 from PIL import Image
 import torch
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
-
-from motion_planning.perception_policy import Predictor, end_effector_pose
-from behavioural_vae.ros_monitor import ROSTrajectoryVAE
-from gibson.ros_monitor import RosPerceptionVAE
-
-from motion_planning.utils import parse_arguments, GIBSON_ROOT, load_parameters, BEHAVIOUR_ROOT, POLICY_ROOT, use_cuda
-from motion_planning.utils import LOOK_AT, DISTANCE, AZIMUTH, ELEVATION, LOOK_AT_EPSILON, CUP_NAMES, KINECT_EXPERIMENTS_PATH
-from motion_planning.utils import ELEVATION_EPSILON, AZIMUTH_EPSILON, DISTANCE_EPSILON
-from behavioural_vae.utils import MIN_ANGLE, MAX_ANGLE
 import pandas as pd
 
-#    print("Give the position of a cup:")
-#    x = float(raw_input("Enter x: "))
-#    y = float(raw_input("Enter y: "))
-#    ('camera_pose', [0.729703198019277, 0.9904542035333381, 0.5861775350680969])
-#    ('Kinect lookat', array([0.71616937, -0.03126261, 0.]))
-#    ('distance', 1.1780036104266332)
-#    ('azimuth', -90.75890510585465)
-#    ('kinect_elevation', -29.841508670508976)
+from TrajectoryVAE.trajectory_vae import TrajectoryVAE, load_parameters
+from TrajectoryVAE.utils import MIN_ANGLE, MAX_ANGLE
 
-# OLD Camera params (these values were used when training old policy)
+from AffordanceVAED.ros_monitor import RosPerceptionVAE
 
-# LOOK_AT = [0.70, 0.0, 0.0]
-# DISTANCE = 1.2
-# AZIMUTH = -90.
-# ELEVATION = -30
-# ELEVATION_EPSILON = 0.5
-# AZIMUTH_EPSILON = 0.5
-# DISTANCE_EPSILON = 0.05
+from affordance_gym.perception_policy import Predictor, end_effector_pose
 
-# Camera values when samples were gathered
-
-# KINECT_LOOKAT = [0.71616937, -0.03126261, 0.]
-# KINECT_DISTANCE = 1.1780036104266332
-# KINECT_AZIMUTH = -90.75890510585465
-# KINECT_ELEVATION = -29.841508670508976
+from affordance_gym.utils import parse_arguments, load_parameters, use_cuda
+from env_setup.env_setup import VAED_MODELS_PATH, TRAJ_MODELS_PATH, POLICY_MODELS_PATH, LOOK_AT, DISTANCE, AZIMUTH, ELEVATION, LOOK_AT_EPSILON, KINECT_EXPERIMENTS_PATH
+from env_setup.env_setup import ELEVATION_EPSILON, AZIMUTH_EPSILON, DISTANCE_EPSILON
 
 
-def take_num(elem):
-    elem = elem.split('_')[-1]
-    elem = elem.split('.')[0]
-    val = int(elem)
-    return val
+'''
+This runs already collected experiment samples (args.log_name) to find good cropping values (args.top_crop, args.width_crop)
+and to experiment samples with different policy models. (this does not need ros) 
+'''
+
 
 def main(args):
 
@@ -55,20 +30,21 @@ def main(args):
 
     assert(args.model_index > -1)
 
-    bahavior_model_path = os.path.join(BEHAVIOUR_ROOT, args.vae_name)
-    action_vae = ROSTrajectoryVAE(bahavior_model_path, args.latent_dim, args.num_actions,
-                                  model_index=args.model_index, num_joints=args.num_joints)
+    # Load trajectory VAE
+    trajectory_vae = TrajectoryVAE(args.latent_dim, args.num_actions, args.num_joints, device)
+    trajectory_vae.to(device)
+    trajectory_model_path = os.path.join(TRAJ_MODELS_PATH, args.vae_name)
+    load_parameters(trajectory_vae, trajectory_model_path, args.model_index)
+    traj_decoder = trajectory_vae.decoder.to(device)
 
-    # Trajectory generator
-    traj_decoder = action_vae.model.decoder
-
-    gibson_model_path = os.path.join(GIBSON_ROOT, args.g_name)
-    perception = RosPerceptionVAE(gibson_model_path, args.g_latent)
+    # Load VAED
+    vaed_path = os.path.join(VAED_MODELS_PATH, args.g_name)
+    perception = RosPerceptionVAE(vaed_path, args.g_latent)
 
     # Policy
     policy = Predictor(args.g_latent + 5, args.latent_dim, args.num_params)
     policy.to(device)
-    policy_path = os.path.join(POLICY_ROOT, args.policy_name)
+    policy_path = os.path.join(POLICY_MODELS_PATH, args.policy_name)
     load_parameters(policy, policy_path, 'model')
 
     # Kinect data
@@ -124,7 +100,7 @@ def main(args):
         trajectories = traj_decoder(latent2)
 
         # Reshape to trajectories
-        trajectories = action_vae.model.to_trajectory(trajectories)
+        trajectories = trajectory_vae.to_trajectory(trajectories)
 
         end_joint_pose = trajectories[:, :, -1]
 
@@ -140,8 +116,8 @@ def main(args):
         sim_real_errors.append(sim_real_error)
 
     end_poses = np.array(end_poses)
-
     save_path = os.path.join(log_path, args.policy_name)
+
     if not(os.path.exists(save_path)):
         os.makedirs(save_path)
 
@@ -189,8 +165,6 @@ def main(args):
         np.save(os.path.join(save_path, 'results.npy'), (cup_poses, end_poses, hw_poses))
     else:
         np.save(os.path.join(save_path, 'results.npy'), (cup_poses, end_poses))
-
-
 
 
 if __name__ == '__main__':

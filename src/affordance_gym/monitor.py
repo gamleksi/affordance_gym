@@ -1,11 +1,9 @@
 #! /usr/bin/env python
-from behavioural_vae.utils import smooth_trajectory, MIN_ANGLE, MAX_ANGLE
-from motion_planning.trajectory_parser import parse_trajectory
-from motion_planning.simulation_interface import CommunicationHandler
-
+from TrajectoryVAE.utils import smooth_trajectory, MIN_ANGLE, MAX_ANGLE
+from affordance_gym.trajectory_parser import parse_trajectory
+from affordance_gym.simulation_interface import CommunicationHandler
 import numpy as np
 
-MODEL_ROOT_PATH = '/home/aleksi/hacks/behavioural_ws/behaviroural_vae/behavioural_vae'
 
 
 class TrajectoryEnv(object):

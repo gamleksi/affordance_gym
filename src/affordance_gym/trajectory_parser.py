@@ -2,6 +2,13 @@ import numpy as np
 import os
 import pickle
 
+
+'''
+
+This is used in generating a trajectory dataset. 
+
+'''
+
 def parse_trajectory(trajectory):
 
     trajectory = trajectory.joint_trajectory.points

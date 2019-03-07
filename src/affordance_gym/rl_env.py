@@ -1,5 +1,12 @@
 import numpy as np
-from motion_planning.utils import LUMI_X_LIM, LUMI_Y_LIM, LUMI_Z_LIM
+from affordance_gym.utils import LUMI_X_LIM, LUMI_Y_LIM
+
+
+'''
+
+This file is only used in the latent predictor eval experiment (for debugging)
+
+'''
 
 
 class SimpleEnvironment(object):
@@ -7,7 +14,6 @@ class SimpleEnvironment(object):
     def __init__(self, trajectory_model, random_goal, device):
         self.trajectory_model = trajectory_model
         self.random_goal = random_goal
-        self.device = device # TODO is this necessary?
 
     def get_state(self):
 

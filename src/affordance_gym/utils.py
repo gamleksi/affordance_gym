@@ -3,7 +3,7 @@ import os
 import argparse
 import torch
 import numpy as np
-from gibson.tools import affordance_to_array, affordance_layers_to_array
+from AffordanceVAED.tools import affordance_to_array, affordance_layers_to_array
 
 import matplotlib as mpl
 mpl.use('Agg')
@@ -130,15 +130,6 @@ def sample_visualize(image, affordance_arr, sample_path, id):
     plt.savefig(os.path.join(sample_path, 'sample_{}.png'.format(id)))
     plt.close(fig)
 
-#    print("Give the position of a cup:")
-#    x = float(raw_input("Enter x: "))
-#    y = float(raw_input("Enter y: "))
-#  ('camera_pose', [0.729703198019277, 0.9904542035333381, 0.5861775350680969])
-#  ('Kinect lookat', array([0.71616937, -0.03126261, 0.]))
-#  ('distance', 1.1780036104266332)
-#  ('azimuth', -90.75890510585465)
-#   ('kinect_elevation', -29.841508670508976)
-
 
 def use_cuda():
 
@@ -199,32 +190,3 @@ def plot_latent_distributions(latents, save_to):
         ax.set_ylabel('frequency')
     plt.savefig(save_to)
     plt.close()
-
-
-# These values work only in the regular robot env (base link different in th robot_table env)
-LUMI_X_LIM = [0.4, 0.75]
-LUMI_Y_LIM = [-0.20, 0.20]
-LUMI_Z_LIM = [.3, .3]
-
-NO_CUP_SHOWN_POSE = [0.42, -0.18]
-
-BEHAVIOUR_ROOT = '/home/aleksi/catkin_ws/src/motion_planning/src/behavioural_vae/models'
-POLICY_ROOT = '/home/aleksi/catkin_ws/src/motion_planning/policy_models'
-GIBSON_ROOT = '/home/aleksi/catkin_ws/src/motion_planning/src/gibson/perception_results'
-KINECT_EXPERIMENTS_PATH = '/home/aleksi/catkin_ws/src/motion_planning/kinect_experiments'
-
-# Perception parameters
-LOOK_AT = [0.70, 0.0, 0.0]
-DISTANCE = 1.16
-AZIMUTH = -90.
-ELEVATION = -30
-
-LOOK_AT_EPSILON = 0.05
-DISTANCE_EPSILON = 0.05
-ELEVATION_EPSILON = 2.
-AZIMUTH_EPSILON = 2.
-
-CUP_X_LIM = [0.4, 0.75]
-CUP_Y_LIM = [-0.20, 0.20]
-
-CUP_NAMES = ['rocket', 'karol', 'gray', 'can', 'blue', 'subway', 'yellow', 'mirror', 'red', 'other', 'stack2', 'stack3', 'bag']

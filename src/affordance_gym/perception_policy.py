@@ -40,7 +40,8 @@ def DH(theta, d, r, alpha, device):
      where
      d: offset along previous z to the common normal
      theta: angle about previous z, from old x to new x
-     r: length of the common normal (aka a, but if using this notation, do not confuse with alpha). Assuming a revolute joint, this is the radius about previous z.
+     r: length of the common normal (aka a, but if using this notation, do not confuse with alpha).
+     Assuming a revolute joint, this is the radius about previous z.
      alpha: angle about common normal, from old z axis to new z axis
     """
 

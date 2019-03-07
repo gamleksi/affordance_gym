@@ -5,16 +5,40 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import pickle
 
-from motion_planning.utils import parse_arguments, GIBSON_ROOT, LOOK_AT, DISTANCE, AZIMUTH, ELEVATION, CUP_X_LIM, CUP_Y_LIM
-from motion_planning.utils import ELEVATION_EPSILON, AZIMUTH_EPSILON, DISTANCE_EPSILON, POLICY_ROOT, LOOK_AT_EPSILON, NO_CUP_SHOWN_POSE
-from motion_planning.simulation_interface import SimulationInterface
-from gibson.tools import affordance_to_array, affordance_layers_to_array
-from gibson.ros_monitor import RosPerceptionVAE
+from affordance_gym.utils import parse_arguments
+
+from affordance_gym.simulation_interface import SimulationInterface
+
+from env_setup.env_setup import ELEVATION_EPSILON, AZIMUTH_EPSILON, DISTANCE_EPSILON, POLICY_MODELS_PATH, LOOK_AT_EPSILON, NO_CUP_SHOWN_POSE
+from env_setup.env_setup import VAED_MODELS_PATH, LOOK_AT, DISTANCE, AZIMUTH, ELEVATION, CUP_X_LIM, CUP_Y_LIM
+
+from AffordanceVAED.tools import affordance_to_array, affordance_layers_to_array
+from AffordanceVAED.ros_monitor import RosPerceptionVAE
 import itertools
 
+'''
+
+Generates training data for a policy to map a affordance latent vector to a correct trajectory latent reprsentation.
+
+
+Training limits for camera and cup position are defined in utils.
+
+
+Three different dataset can be generated:
+
+- clutter_env: only clutter objects on the table
+- two_cups: two cups on the table
+
+Training data is saved to the perception model's folder.
+
+
+'''
+
+# The following values should correspond to objects in the MuJoCo XML env.
 
 NUM_RANDOM_OBJECTS = 15
 NUM_CUPS = 9
+
 
 def sample_visualize(image, affordance_arr, model_path, id):
 
@@ -47,14 +71,14 @@ if __name__  == '__main__':
     rospy.init_node('generate_perception', anonymous=True)
 
     args = parse_arguments(gibson=True, )
-    model = RosPerceptionVAE(os.path.join(GIBSON_ROOT, args.g_name), args.g_latent)
+    model = RosPerceptionVAE(os.path.join(VAED_MODELS_PATH, args.g_name), args.g_latent)
 
     if args.debug:
-        model_path = os.path.join(POLICY_ROOT, 'debug', 'perception', args.g_name)
+        model_path = os.path.join(POLICY_MODELS_PATH, 'debug', 'perception', args.g_name)
         x_steps = 4
         y_steps = 4
     else:
-        model_path = os.path.join(GIBSON_ROOT, args.g_name)
+        model_path = os.path.join(VAED_MODELS_PATH, args.g_name)
         x_steps = 10
         y_steps = 10
 
@@ -289,4 +313,3 @@ if __name__  == '__main__':
                  np.array(container_azimuths), np.array(container_elevations),
                  np.array(cup_ids), np.array(cup_positions)], f)
     f.close()
-

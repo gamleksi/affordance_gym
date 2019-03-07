@@ -137,7 +137,6 @@ class MCInterface(object):
         print('Current Joint Values:')
         print(self.arm_planner.get_current_joint_values())
 
-     # For grasping roll_rad=np.pi/2, pitch_rad=np.pi/4, yaw_rad=np.pi/2):
     def plan_end_effector_to_position(self, x_p=0.5, y_p=0, z_p=0.5,  roll_rad=0, pitch_rad=np.pi, yaw_rad=np.pi):
 
         self.arm_planner.clear_pose_targets()
