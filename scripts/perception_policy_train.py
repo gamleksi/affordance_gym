@@ -53,13 +53,27 @@ def load_dataset(perception_name, fixed_camera, debug):
         print(file)
         dataset = np.load(os.path.join(data_path, file))
 
-        latents.append(dataset[0][:, 0, :]) # Bug fix
-        lookats.append(dataset[1][:, :2])
-        camera_distances.append(dataset[2])
-        azimuths.append(dataset[3])
-        elevations.append(dataset[4])
-        cup_ids.append(dataset[5])
-        target_coords.append(dataset[6])
+        if len(dataset) < 7:
+            # Datasets without lookats (This part can be removed in the future)
+            latents.append(dataset[0][:, 0, :])
+            lookat_values = np.zeros([dataset[0].shape[0], 2])
+            lookat_values[:, :] = LOOK_AT[:2]
+
+            lookats.append(lookat_values)
+            camera_distances.append(dataset[1])
+            azimuths.append(dataset[2])
+            elevations.append(dataset[3])
+            cup_ids.append(dataset[4])
+            target_coords.append(dataset[5])
+        else:
+
+            latents.append(dataset[0][:, 0, :]) # Bug fix
+            lookats.append(dataset[1][:, :2])
+            camera_distances.append(dataset[2])
+            azimuths.append(dataset[3])
+            elevations.append(dataset[4])
+            cup_ids.append(dataset[5])
+            target_coords.append(dataset[6])
 
     # Arrays to numpy
     latents = np.concatenate(latents)
@@ -84,7 +98,7 @@ def load_dataset(perception_name, fixed_camera, debug):
         lookat = lookats[0]
 
         fixed_indices = camera_distances == distance
-        fixed_camera = fixed_camera * (lookats == lookat)
+        fixed_indices = fixed_camera * (lookats == lookat)
         fixed_indices = fixed_indices * (elevations == azimuth)
         fixed_indices = fixed_indices * (azimuths == elevation)
 
