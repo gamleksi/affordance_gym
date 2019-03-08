@@ -85,7 +85,7 @@ if __name__  == '__main__':
 
     rospy.init_node('generate_perception', anonymous=True, disable_signals=True)
 
-    model = RosPerceptionVAE(os.path.join(VAED_MODELS_PATH, args.g_name), args.g_latent)
+    model = RosPerceptionVAE(os.path.join(VAED_MODELS_PATH, args.vaed_latent), args.vaed_latent)
 
     if args.debug:
         x_steps = 2
@@ -96,7 +96,7 @@ if __name__  == '__main__':
         y_steps = 10
         camera_param_steps = 5
 
-    save_path = os.path.join(VAED_MODELS_PATH, args.g_name)
+    save_path = os.path.join(VAED_MODELS_PATH, args.vaed_name)
     planner = SimulationInterface(arm_name='lumi_arm')
     planner.reset(2)
 

@@ -20,17 +20,17 @@ def load_parameters(model, load_path, model_name):
 
 def parse_traj_arguments(parser):
 
-    parser.add_argument('--vae-name', default='model_v2', type=str, help='')
-    parser.add_argument('--latent-dim', default=5, type=int, help='') # VAE model determines
-    parser.add_argument('--num-joints', default=7, type=int, help='')
-    parser.add_argument('--num-actions', default=24, type=int, help='Smoothed trajectory') # VAE model determines
-    parser.add_argument('--model-index', default=11, type=int)
+    parser.add_argument('--traj-name', default='model_v2', type=str, help='folder name of the trajectory vae')
+    parser.add_argument('--traj-latent', default=5, type=int, help='Latent size of trajectory VAE')
+    parser.add_argument('--num-joints', default=7, type=int, help='The number of robot joints')
+    parser.add_argument('--num-actions', default=24, type=int, help='The number of actions in a trajectory')
+    parser.add_argument('--model-index', default=11, type=int, help='The nth saved model in the model folder')
 
 
 def parse_vaed_arguments(parser):
 
-    parser.add_argument('--g-name', default='rgb_model_v1', type=str)
-    parser.add_argument('--g-latent', default=10, type=int)
+    parser.add_argument('--vaed-name', default='rgb_model_v1', type=str, help='folder name of variational affordance encoder decoder')
+    parser.add_argument('--vaed-latent', default=10, type=int, help='Latent size of VAED')
 
 
 def parse_moveit_arguments(parser):
@@ -40,20 +40,20 @@ def parse_moveit_arguments(parser):
 def parse_kinect_arguments(parser):
 
     parser.add_argument('--real-hw', dest='real_hw', action='store_true')
-    parser.set_defaults(real_hw=False)
-    parser.add_argument('--log-name', default='kinect_example', type=str)
-    parser.add_argument('--top-crop', default=44, type=int)
-    parser.add_argument('--width-crop', default=28, type=int)
-    parser.add_argument('--x-pose', default=None, type=float)
-    parser.add_argument('--y-pose', default=None, type=float)
-    parser.add_argument('--cup-type', default=None, type=str)
-    parser.add_argument('--random-objs', default=None, type=int)
+    parser.set_defaults(real_hw=False, help='use a real harware setup')
+    parser.add_argument('--log-name', default='kinect_example', type=str, help='saves real experiment results to a given folder')
+    parser.add_argument('--top-crop', default=64, type=int)
+    parser.add_argument('--width-crop', default=0, type=int)
+    parser.add_argument('--x-pose', default=None, type=float, help='Defines a constant cup x position')
+    parser.add_argument('--y-pose', default=None, type=float, help='Defines a constant cup y position')
+    parser.add_argument('--cup-type', default=None, type=str, help='Defines a constant cup name')
+    parser.add_argument('--random-objs', default=None, type=int, help='Defines a constant number of clutter objects on a table')
 
 
 def parse_policy_arguments(parser):
-    parser.add_argument('--policy-name', default='model_v1', type=str, help='')
-    parser.add_argument('--num-params', default=128, type=int)
-    parser.add_argument('--fixed-camera', dest='fixed_camera', action='store_true')
+    parser.add_argument('--policy-name', default='model_v1', type=str, help='folder name of the policy')
+    parser.add_argument('--num-params', default=128, type=int, help='Num params in each policy layer (default 128)')
+    parser.add_argument('--fixed-camera', dest='fixed_camera', action='store_true', help='Camera params are not given to policy')
     parser.set_defaults(fixed_camera=False)
 
 
@@ -61,7 +61,7 @@ def parse_policy_train_arguments(parser):
 
     parser.add_argument('--num-epoch', default=1000, type=int)
     parser.add_argument('--batch-size', default=124, type=int)
-    parser.add_argument('--lr', default=1.e-3, type=float)
+    parser.add_argument('--lr', default=1.e-3, type=float, help='learning rate')
     parser.add_argument('--num-processes', default=16, type=int)
 
 
@@ -76,7 +76,6 @@ def sample_visualize(image, affordance_arr, sample_path, id):
 
     affordance_layers = affordance_layers_to_array(affordance_arr) / 255.
     affordance_layers = np.transpose(affordance_layers, (0, 2, 3, 1))
-    # affordance_layers = [layer for layer in affordance_layers]
 
     samples = np.stack((image, affordance, affordance_layers[0], affordance_layers[1]))
 

@@ -130,7 +130,7 @@ def main(args):
 
     assert(args.model_index > 0)
 
-    action_vae = ROSTrajectoryVAE(os.path.join(TRAJ_MODELS_PATH, args.vae_name), args.latent_dim, args.num_actions,
+    action_vae = ROSTrajectoryVAE(os.path.join(TRAJ_MODELS_PATH, args.traj_name), args.traj_latent, args.num_actions,
                                        model_index=args.model_index, num_joints=args.num_joints)
 
     # Trajectory generator
@@ -139,13 +139,13 @@ def main(args):
     traj_decoder.to(device)
 
     # Load data
-    dataset = load_dataset(args.g_name, args.fixed_camera, args.debug)
+    dataset = load_dataset(args.vaed_name, args.fixed_camera, args.debug)
 
     # Policy
     if args.fixed_camera:
-        policy = Predictor(args.g_latent, args.latent_dim, args.num_params)
+        policy = Predictor(args.vaed_latent, args.traj_latent, args.num_params)
     else:
-        policy = Predictor(args.g_latent + 5, args.latent_dim, args.num_params)
+        policy = Predictor(args.vaed_latent + 5, args.traj_latent, args.num_params)
 
     policy.to(device)
 

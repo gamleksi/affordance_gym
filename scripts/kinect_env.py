@@ -149,16 +149,16 @@ def main(args):
     # Trajectory generator
     assert(args.model_index > -1)
 
-    bahavior_model_path = os.path.join(TRAJ_MODELS_PATH, args.vae_name)
-    action_vae = ROSTrajectoryVAE(bahavior_model_path, args.latent_dim, args.num_actions,
+    bahavior_model_path = os.path.join(TRAJ_MODELS_PATH, args.traj_name)
+    action_vae = ROSTrajectoryVAE(bahavior_model_path, args.traj_latent, args.num_actions,
                                   model_index=args.model_index, num_joints=args.num_joints)
 
     # pereception
-    gibson_model_path = os.path.join(VAED_MODELS_PATH, args.g_name)
-    perception = RosPerceptionVAE(gibson_model_path, args.g_latent)
+    gibson_model_path = os.path.join(VAED_MODELS_PATH, args.vaed_name)
+    perception = RosPerceptionVAE(gibson_model_path, args.vaed_latent)
 
     # Policy
-    policy = Predictor(args.g_latent + 5, args.latent_dim, args.num_params)
+    policy = Predictor(args.vaed_latent + 5, args.traj_latent, args.num_params)
     policy.to(device)
     policy_path = os.path.join(POLICY_MODELS_PATH, args.policy_name)
     load_parameters(policy, policy_path, 'model')

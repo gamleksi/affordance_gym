@@ -32,18 +32,18 @@ def main(args):
     assert(args.model_index > -1)
 
     # Load trajectory VAE
-    trajectory_vae = TrajectoryVAE(args.latent_dim, args.num_actions, args.num_joints, device)
+    trajectory_vae = TrajectoryVAE(args.traj_latent, args.num_actions, args.num_joints, device)
     trajectory_vae.to(device)
-    trajectory_model_path = os.path.join(TRAJ_MODELS_PATH, args.vae_name)
+    trajectory_model_path = os.path.join(TRAJ_MODELS_PATH, args.traj_name)
     load_parameters(trajectory_vae, trajectory_model_path, args.model_index)
     traj_decoder = trajectory_vae.decoder.to(device)
 
     # Load VAED
-    vaed_path = os.path.join(VAED_MODELS_PATH, args.g_name)
-    perception = RosPerceptionVAE(vaed_path, args.g_latent)
+    vaed_path = os.path.join(VAED_MODELS_PATH, args.vaed_name)
+    perception = RosPerceptionVAE(vaed_path, args.vaed_latent)
 
     # Policy
-    policy = Predictor(args.g_latent + 5, args.latent_dim, args.num_params)
+    policy = Predictor(args.vaed_latent + 5, args.traj_latent, args.num_params)
     policy.to(device)
     policy_path = os.path.join(POLICY_MODELS_PATH, args.policy_name)
     load_parameters(policy, policy_path, 'model')

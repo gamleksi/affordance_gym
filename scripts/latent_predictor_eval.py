@@ -32,7 +32,7 @@ def main(args):
 
     rospy.init_node('talker', anonymous=True)
 
-    behaviour_model =  ROSTrajectoryVAE(os.path.join(TRAJ_MODELS_PATH, args.vae_name), args.latent_dim, args.num_actions, model_index=args.model_index, num_joints=args.num_joints)
+    behaviour_model =  ROSTrajectoryVAE(os.path.join(TRAJ_MODELS_PATH, args.traj_name), args.traj_latent, args.num_actions, model_index=args.model_index, num_joints=args.num_joints)
 
     simulation_interface = SimulationInterface('lumi_arm')
     trajectory_model = TrajectoryEnv(behaviour_model, simulation_interface, args.num_actions, num_joints=args.num_joints, trajectory_duration=args.duration)
@@ -40,7 +40,7 @@ def main(args):
 
     env = SimpleEnvironment(trajectory_model, args.random_goal, device)
 
-    policy = Predictor(args.latent_dim)
+    policy = Predictor(args.traj_latent)
     policy.to(device)
     load_parameters(policy, os.path.join(TRAJ_MODELS_PATH, 'pred_log', args.policy_name), 'model')
 

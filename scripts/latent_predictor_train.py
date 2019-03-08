@@ -130,7 +130,7 @@ def main(args):
     else:
         print('Behavioural is not using GPU')
 
-    model_dir = get_model_directory(args.vae_name)
+    model_dir = get_model_directory(args.traj_name)
     results_path = os.path.join(model_dir, 'reconstruction_results')
 
     if args.debug:
@@ -159,7 +159,7 @@ def main(args):
         optimizer = optim.Adam(model.parameters(), lr=args.lr)
         optimizer.zero_grad()
 
-        dataset = load_dataset(args.vae_name, model_idx, args.preprocess)
+        dataset = load_dataset(args.traj_name, model_idx, args.preprocess)
 
         print("Dataset size", dataset.__len__())
         train_size = int(dataset.__len__() * 0.7)
