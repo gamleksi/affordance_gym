@@ -21,6 +21,7 @@ def main(args):
 
 
     rospy.init_node('kinect calibrate', anonymous=True)
+
     rate = rospy.Rate(0.2)  # 10hz
     sim = SimulationInterface(arm_name='panda_arm')
 
@@ -78,5 +79,4 @@ def main(args):
 
 
 if __name__ == '__main__':
-    args = parse_arguments(behavioural_vae=True, gibson=True, policy=True, policy_eval=True)
-    main(args)
+    main()

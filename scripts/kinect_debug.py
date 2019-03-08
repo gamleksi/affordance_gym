@@ -5,6 +5,7 @@ import torch
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
 import pandas as pd
+import argparse
 
 from TrajectoryVAE.trajectory_vae import TrajectoryVAE, load_parameters
 from TrajectoryVAE.utils import MIN_ANGLE, MAX_ANGLE
@@ -13,7 +14,7 @@ from AffordanceVAED.ros_monitor import RosPerceptionVAE
 
 from affordance_gym.perception_policy import Predictor, end_effector_pose
 
-from affordance_gym.utils import parse_arguments, load_parameters, use_cuda
+from affordance_gym.utils import parse_vaed_arguments, parse_traj_arguments, parse_policy_arguments, load_parameters, use_cuda
 from env_setup.env_setup import VAED_MODELS_PATH, TRAJ_MODELS_PATH, POLICY_MODELS_PATH, LOOK_AT, DISTANCE, AZIMUTH, ELEVATION, LOOK_AT_EPSILON, KINECT_EXPERIMENTS_PATH
 from env_setup.env_setup import ELEVATION_EPSILON, AZIMUTH_EPSILON, DISTANCE_EPSILON
 
@@ -168,5 +169,19 @@ def main(args):
 
 
 if __name__ == '__main__':
-    args = parse_arguments(behavioural_vae=True, gibson=True, policy=True, policy_eval=True, kinect=True)
+
+    parser = argparse.ArgumentParser(description='Experiment gathered Kinect images with a different setup (policy, trajectory vae, vaed, image cropping)')
+
+    parse_vaed_arguments(parser)
+    parse_traj_arguments(parser)
+    parse_policy_arguments(parser)
+
+    parser.add_argument('--real-hw', dest='real_hw', action='store_true', help='Compare performance with results that were obtained while gathering the experiments' )
+    parser.set_defaults(real_hw=False)
+    parser.add_argument('--log-name', default='kinect_example', type=str, help='Kinect experiment folder')
+    parser.add_argument('--top-crop', default=64, type=int)
+    parser.add_argument('--width-crop', default=0, type=int)
+
+    args = parser.parse_args()
+
     main(args)

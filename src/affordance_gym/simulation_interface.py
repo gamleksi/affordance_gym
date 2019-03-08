@@ -6,7 +6,7 @@ import random
 from affordance_gym.moveit_commander_interface import MCInterface
 from mujoco_ros_control.srv import ChangeCupPose, ChangeCameraParams
 from std_srvs.srv import Empty
-from affordance_gym.utils import LUMI_Y_LIM, LUMI_X_LIM, LUMI_Z_LIM
+from env_setup.env_setup import LUMI_Y_LIM, LUMI_X_LIM, LUMI_Z_LIM
 
 
 GRIPPER_POSITION_LIMITS = (LUMI_X_LIM, LUMI_Y_LIM, LUMI_Z_LIM)

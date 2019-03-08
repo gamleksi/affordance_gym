@@ -8,7 +8,9 @@ from affordance_gym.srv import RobotTrajectory, ChangePose, JointValues, JointNa
 
 '''
 
-This process should run in the same server, as the main roscore.  
+
+This Moveit Commander Interface communicates with the mc_interface node (mc_interface.py). 
+
 This setup was introduced, because there was a different ros version in the robot's computer than in the 'policy' computer.    
 
 '''

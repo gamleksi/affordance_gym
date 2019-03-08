@@ -1,5 +1,5 @@
 import numpy as np
-from affordance_gym.utils import LUMI_X_LIM, LUMI_Y_LIM
+from env_setup.env_setup import LUMI_X_LIM, LUMI_Y_LIM
 
 
 '''

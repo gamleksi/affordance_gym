@@ -1,6 +1,7 @@
 import os
 import csv
 import numpy as np
+import argparse
 from PIL import Image
 import torch
 import pandas as pd
@@ -11,7 +12,7 @@ from affordance_gym.simulation_interface import SimulationInterface
 from affordance_gym.remote_interface import RemoteMCInterface
 from affordance_gym.perception_policy import Predictor
 
-from affordance_gym.utils import parse_arguments, sample_visualize, load_parameters, use_cuda
+from affordance_gym.utils import parse_kinect_arguments, parse_policy_arguments, parse_traj_arguments, parse_vaed_arguments, parse_moveit_arguments, sample_visualize, load_parameters, use_cuda
 from affordance_gym.monitor import TrajectoryEnv
 
 from env_setup.env_setup import DISTANCE, AZIMUTH, ELEVATION,  LOOK_AT, LOOK_AT_EPSILON, CUP_NAMES, KINECT_EXPERIMENTS_PATH
@@ -66,11 +67,10 @@ def change_camera_pose(sim, real_hw, debug):
             kinect_lookat = LOOK_AT
             kinect_distance = DISTANCE
             kinect_azimuth = AZIMUTH
-            kinect_elevation =  ELEVATION
+            kinect_elevation = ELEVATION
 
         else:
 
-            # Kinect parameters TODO
             cam_position, quaternions = sim.kinect_camera_pose()
 
             if (cam_position is None):
@@ -143,7 +143,7 @@ def crop_top(image, top_crop, width_crop):
 
 def main(args):
 
-    rospy.init_node('talker', anonymous=True)
+    rospy.init_node('kinect_env', anonymous=True)
     device = use_cuda()
 
     # Trajectory generator
@@ -348,5 +348,18 @@ def main(args):
 
 
 if __name__ == '__main__':
-    args = parse_arguments(behavioural_vae=True, gibson=True, policy=True, policy_eval=True, kinect=True)
+
+    parser = argparse.ArgumentParser(description='Do Affordance Leaning Experiments')
+
+    parse_vaed_arguments(parser)
+    parse_traj_arguments(parser)
+    parse_policy_arguments(parser)
+    parse_kinect_arguments(parser)
+    parse_moveit_arguments(parser)
+
+    parser.add_argument('--debug', dest='debug', action='store_true', help='run a fake setup')
+    parser.set_defaults(debug=False)
+
+    args = parser.parse_args()
+
     main(args)

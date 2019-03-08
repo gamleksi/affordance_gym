@@ -6,7 +6,7 @@ from torch.utils import data
 from torch.nn import functional as F
 import numpy as np
 
-from affordance_gym.utils import parse_arguments,  save_arguments, use_cuda
+from affordance_gym.utils import parse_traj_arguments, parse_vaed_arguments, parse_policy_arguments, parse_policy_train_arguments, save_arguments, use_cuda
 from affordance_gym.utils import plot_loss, plot_scatter, plot_latent_distributions
 from affordance_gym.perception_policy import end_effector_pose, Predictor
 
@@ -52,29 +52,14 @@ def load_dataset(perception_name, fixed_camera, debug):
     for file in data_files:
         print(file)
         dataset = np.load(os.path.join(data_path, file))
-        if len(dataset) < 7: # Dataset without lookats
 
-            latents.append(dataset[0][:, 0, :]) # Bug fix
-            lookat_values = np.zeros([dataset[0].shape[0], 2])
-            lookat_values[:, :] = LOOK_AT[:2]
-            print('old', file)
-
-            lookats.append(lookat_values)
-            camera_distances.append(dataset[1])
-            azimuths.append(dataset[2])
-            elevations.append(dataset[3])
-            cup_ids.append(dataset[4])
-            target_coords.append(dataset[5])
-        else:
-
-            print('new', file)
-            latents.append(dataset[0][:, 0, :]) # Bug fix
-            lookats.append(dataset[1][:, :2])
-            camera_distances.append(dataset[2])
-            azimuths.append(dataset[3])
-            elevations.append(dataset[4])
-            cup_ids.append(dataset[5])
-            target_coords.append(dataset[6])
+        latents.append(dataset[0][:, 0, :]) # Bug fix
+        lookats.append(dataset[1][:, :2])
+        camera_distances.append(dataset[2])
+        azimuths.append(dataset[3])
+        elevations.append(dataset[4])
+        cup_ids.append(dataset[5])
+        target_coords.append(dataset[6])
 
     # Arrays to numpy
     latents = np.concatenate(latents)
@@ -279,4 +264,19 @@ def main(args):
 
 
 if __name__ == '__main__':
-    main(parse_arguments(behavioural_vae=True, policy=True, gibson=True))
+
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Train a perception policy in a supervised manner. Training data should be generated for a used vaed')
+
+    parse_traj_arguments(parser)
+    parse_vaed_arguments(parser)
+    parse_policy_arguments(parser)
+    parse_policy_train_arguments(parser)
+
+    parser.add_argument('--debug', dest='debug', action='store_true', help='Uses only small set of data for training')
+    parser.set_defaults(debug=False)
+
+    args = parser.parse_args()
+
+    main(args)

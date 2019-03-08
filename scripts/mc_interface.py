@@ -9,6 +9,13 @@ from affordance_gym.srv import JointValues, JointValuesResponse
 
 import argparse
 
+'''
+
+This process should run in the same server, as the main roscore.  
+This setup was introduced, because there was a different ros version in the robot's computer than in the 'policy' computer.    
+
+'''
+
 parser = argparse.ArgumentParser(description='MC interface')
 parser.add_argument('--velocity-factor', default=0.1, type=float)
 parser.add_argument('--arm-name', default='lumi_arm', type=str)

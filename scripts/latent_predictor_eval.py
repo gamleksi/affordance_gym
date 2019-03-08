@@ -4,7 +4,7 @@ from TrajectoryVAE.ros_monitor import ROSTrajectoryVAE
 from TrajectoryVAE.latent_predicor import Predictor
 
 from affordance_gym.simulation_interface import SimulationInterface
-from affordance_gym.utils import parse_arguments, load_parameters, use_cuda
+from affordance_gym.utils import load_parameters, use_cuda
 from affordance_gym.monitor import TrajectoryEnv
 from affordance_gym.rl_env import SimpleEnvironment
 
@@ -86,5 +86,7 @@ def main(args):
 
 if __name__ == '__main__':
 
-    args = parse_arguments(behavioural_vae=True, feedforward=True)
-    main(args)
+  #  args = parse_arguments(behavioural_vae=True, feedforward=True)
+  #  main(args)
+
+  print("This does not work")

@@ -14,18 +14,19 @@ from TrajectoryVAE.utils import smooth_trajectory, MAX_ANGLE, MIN_ANGLE
 
 from env_setup.env_setup import LUMI_X_LIM, LUMI_Y_LIM, LUMI_Z_LIM
 
+
 parser = argparse.ArgumentParser(description='Trajectory Generator Arguments')
 
-parser.add_argument('--save-folder', default='example', type=str, help='folder name')
-parser.add_argument('--save-root', default='../trajectory_data', type=str, help='data path')
+parser.add_argument('--save-folder', default='example', type=str, help='Save trajectories to a given folder')
+parser.add_argument('--save-root', default='../trajectory_data', type=str, help='Save the trajectory folder to a given path')
 
 parser.add_argument('--num-samples', default=64, type=int, help='Number of samples')
 parser.add_argument('--num-joints', default=7, type=int, help='The Number of robot joints')
 
 parser.add_argument("--debug", action="store_true", help='Explore manipulator results')
-parser.add_argument('--epsilon', default=0.04, type=float, help='For debugging the stochasticity of the manipulation algorithm')
+parser.add_argument('--epsilon', default=0.04, type=float, help='an end effector position error radius to examine'
+                                                                ' stochasticity of the planner algorithm')
 parser.add_argument("--rtt-star", help="Use RTTStar", action="store_true")
-parser.add_argument()
 
 args = parser.parse_args()
 
@@ -66,7 +67,7 @@ def plot_trajectory(trajectories, image, path, normalized):
 
 if __name__ == '__main__':
 
-    rospy.init_node('talker', anonymous=True)
+    rospy.init_node('generate_trajectories', anonymous=True, disable_signals=True)
 
     save_path = os.path.join(args.save_root, args.save_folder)
 
@@ -81,11 +82,12 @@ if __name__ == '__main__':
     simulation_interface = SimulationInterface('lumi_arm', gripper_name=gripper_name, planning_id=planning_id)
     simulation_interface.reset(1)
 
-    if args.debug:
 
-        steps = np.int(np.sqrt(args.num_samples))
-        if not(os.path.exists(args.save_folder)):
-            os.makedirs(args.save_folder)
+    steps = np.int(np.sqrt(args.num_samples))
+    if not(os.path.exists(args.save_folder)):
+        os.makedirs(args.save_folder)
+
+    if args.debug:
 
         trajectory_vars = []
         most_var_joints = []
@@ -142,8 +144,8 @@ if __name__ == '__main__':
         rospy.on_shutdown(trajectory_saver.save)
         i = 0
 
-        for x in np.linspace(LUMI_X_LIM[0], LUMI_X_LIM[1], 100):
-          for y in np.linspace(LUMI_Y_LIM[0], LUMI_Y_LIM[1], 100):
+        for x in np.linspace(LUMI_X_LIM[0], LUMI_X_LIM[1], steps):
+          for y in np.linspace(LUMI_Y_LIM[0], LUMI_Y_LIM[1], steps):
               plan = simulation_interface.plan_end_effector_to_position(x_p=x, y_p=y, z_p=LUMI_Z_LIM[0])
               if plan:
                   trajectory_saver.add_trajectory(plan, (x, y, LUMI_Z_LIM[0]))

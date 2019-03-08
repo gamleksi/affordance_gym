@@ -6,15 +6,16 @@ from torch.autograd import Variable
 import rospy
 
 from affordance_gym.simulation_interface import SimulationInterface
-from affordance_gym.perception_policy import Predictor
-from affordance_gym.utils import parse_arguments, load_parameters,  use_cuda
+from affordance_gym.perception_policy import Predictor, end_effector_pose
+from affordance_gym.utils import parse_policy_arguments, parse_moveit_arguments, parse_vaed_arguments, parse_traj_arguments, load_parameters,  use_cuda
 
 from affordance_gym.monitor import TrajectoryEnv
 
 from env_setup.env_setup import ELEVATION_EPSILON, AZIMUTH_EPSILON, DISTANCE_EPSILON,  VAED_MODELS_PATH, TRAJ_MODELS_PATH, POLICY_MODELS_PATH
-from env_setup.env_setup import LOOK_AT, DISTANCE, AZIMUTH, ELEVATION, CUP_X_LIM, CUP_Y_LIM
+from env_setup.env_setup import LOOK_AT, DISTANCE, AZIMUTH, ELEVATION, CUP_X_LIM, CUP_Y_LIM, LOOK_AT_EPSILON
 
 from TrajectoryVAE.ros_monitor import ROSTrajectoryVAE
+from TrajectoryVAE.utils import MAX_ANGLE, MIN_ANGLE
 from AffordanceVAED.ros_monitor import RosPerceptionVAE
 
 
@@ -27,7 +28,7 @@ Evaluates the performance of the affordance policy in MuJoCo
 
 def main(args):
 
-    rospy.init_node('talker', anonymous=True)
+    rospy.init_node('policy_train', anonymous=True)
 
     device = use_cuda()
 
@@ -59,7 +60,7 @@ def main(args):
     sim.change_camere_params(LOOK_AT, DISTANCE, AZIMUTH, ELEVATION)
     env = TrajectoryEnv(action_vae, sim, args.num_actions, num_joints=args.num_joints, trajectory_duration=args.duration)
 
-    rewards = []
+    losses = []
     for idx in range(100):
         # cup_name = 'cup{}'.format(np.random.randint(1, 10))
         x = np.random.uniform(CUP_X_LIM[0], CUP_X_LIM[1])
@@ -79,10 +80,9 @@ def main(args):
             cup_name = 'cup{}'.format(np.random.random_integers(1, 10))
 
         sim.reset_table(x, y, 0, cup_name, duration=1.5)
+
         image_arr = sim.capture_image('/lumi_mujoco/rgb')
         image = Image.fromarray(image_arr)
-
-        # affordance, sample = perception.reconstruct(image) TODO sample visualize
 
         # Image -> Latent1
         latent1 = perception.get_latent(image)
@@ -101,10 +101,10 @@ def main(args):
         # latent and camera params -> latent2
         latent2 = policy(latent1)
 
-        if (False):
+        if (args.forward_kinematics):
 
             # latent2 -> trajectory
-            trajectories = traj_decoder(latent2)
+            trajectories = action_vae.model.decoder(latent2)
 
             # Reshape to trajectories
             trajectories = action_vae.model.to_trajectory(trajectories)
@@ -125,21 +125,36 @@ def main(args):
 
         else:
 
-            latent2 = latent2.detach().cpu().numpy() # TODO fix this!
+            latent2 = latent2.detach().cpu().numpy()
             _, end_pose = env.do_latent_imitation(latent2[0])
 
             loss = np.linalg.norm(np.array([x, y]) - end_pose[:2])
-            # env.reset_environment(duration=0.0)
 
-        rewards.append(loss)
-        # env.reset_environment(duration=3.0)
+        losses.append(loss)
         print('loss: {}'.format(loss))
         print("goal", x, y)
         print("end_pose", end_pose)
 
-    print("AVG: ", np.mean(rewards), " VAR: ", np.var(rewards))
+    print("AVG: ", np.mean(losses), " VAR: ", np.var(losses))
 
 
 if __name__ == '__main__':
-    args = parse_arguments(behavioural_vae=True, gibson=True, policy=True, policy_eval=True)
+
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Evaluate a perception policy in MuJoCo')
+
+    parse_policy_arguments(parser)
+    parse_moveit_arguments(parser)
+    parse_vaed_arguments(parser)
+    parse_traj_arguments(parser)
+
+    parser.add_argument('--forward-kinematics', dest='forward_kinematics', action='store_true', help="Compute an end effector position by solving forward kinematics")
+    parser.set_defaults(forward_kinematics=False)
+
+    parser.add_argument('--randomize-all', dest='randomize_all', action='store_true')
+    parser.set_defaults(randomize_all=False)
+
+    args = parser.parse_args()
+
     main(args)

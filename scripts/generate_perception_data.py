@@ -4,8 +4,9 @@ import rospy
 import matplotlib.pyplot as plt
 from PIL import Image
 import pickle
+import argparse
 
-from affordance_gym.utils import parse_arguments
+from affordance_gym.utils import parse_vaed_arguments
 
 from affordance_gym.simulation_interface import SimulationInterface
 
@@ -68,38 +69,45 @@ def sample_visualize(image, affordance_arr, model_path, id):
 
 if __name__  == '__main__':
 
-    rospy.init_node('generate_perception', anonymous=True)
+    parser = argparse.ArgumentParser(description='Generates perception training data for the policy part')
 
-    args = parse_arguments(gibson=True, )
+    parse_vaed_arguments(parser)
+
+    parser.add_argument('--cup-id', default=1, type=int, help="cup-id lets you define two cups (cup-id, cup-id + 1) of which the samples are gathered (rendering cannot be parallellized in one roscore).")
+    parser.add_argument('--clutter-env', dest='clutter_env', action='store_true', help="Only clutter objects on the table")
+    parser.set_defaults(clutter_env=False)
+    parser.add_argument('--two-cups', dest='two_cups', action='store_true', help="Two cups on table in each sample")
+    parser.set_defaults(two_cups=False)
+    parser.add_argument('--debug', dest='debug', action='store_true',
+                        help="Decreases the number of generated samples and visualizes the results to (POLICY_MODELS_PATH, 'debug')")
+
+    args = parser.parse_args()
+
+    rospy.init_node('generate_perception', anonymous=True, disable_signals=True)
+
     model = RosPerceptionVAE(os.path.join(VAED_MODELS_PATH, args.g_name), args.g_latent)
 
     if args.debug:
-        model_path = os.path.join(POLICY_MODELS_PATH, 'debug', 'perception', args.g_name)
-        x_steps = 4
-        y_steps = 4
+        model_path = os.path.join(POLICY_MODELS_PATH, 'debug', args.g_name)
+        x_steps = 2
+        y_steps = 2
+        camera_param_steps = 2
     else:
         model_path = os.path.join(VAED_MODELS_PATH, args.g_name)
         x_steps = 10
         y_steps = 10
+        camera_param_steps = 5
 
     planner = SimulationInterface(arm_name='lumi_arm')
     planner.reset(2)
 
     planner.change_camere_params(LOOK_AT, DISTANCE, AZIMUTH, ELEVATION)
 
-    if (args.debug):
-        steps = 2
-        cup_id_steps = 2
-    else:
-        steps = 5
-        cup_id_steps = 10
-
-    lookat_x_values = LOOK_AT[0] + np.linspace(-LOOK_AT_EPSILON, LOOK_AT_EPSILON, steps)
-    lookat_y_values = LOOK_AT[1] + np.linspace(-LOOK_AT_EPSILON, LOOK_AT_EPSILON, steps)
-
-    distances = DISTANCE + np.linspace(-DISTANCE_EPSILON, DISTANCE_EPSILON, steps)
-    elevations = ELEVATION + np.linspace(-ELEVATION_EPSILON, ELEVATION_EPSILON, steps)
-    azimuths = AZIMUTH + np.linspace(-AZIMUTH_EPSILON, AZIMUTH_EPSILON, steps)
+    lookat_x_values = LOOK_AT[0] + np.linspace(-LOOK_AT_EPSILON, LOOK_AT_EPSILON, camera_param_steps)
+    lookat_y_values = LOOK_AT[1] + np.linspace(-LOOK_AT_EPSILON, LOOK_AT_EPSILON, camera_param_steps)
+    distances = DISTANCE + np.linspace(-DISTANCE_EPSILON, DISTANCE_EPSILON, camera_param_steps)
+    elevations = ELEVATION + np.linspace(-ELEVATION_EPSILON, ELEVATION_EPSILON, camera_param_steps)
+    azimuths = AZIMUTH + np.linspace(-AZIMUTH_EPSILON, AZIMUTH_EPSILON, camera_param_steps)
 
     camera_params_combinations = itertools.product(lookat_x_values, lookat_y_values, [LOOK_AT[2]], distances, azimuths, elevations)
 
@@ -293,7 +301,8 @@ if __name__  == '__main__':
                            sample_visualize(sample, affordance, model_path, idx)
 
                        idx += 1
-                       print("sample: {} / {}".format(idx, (steps ** 5) * x_steps * y_steps * cup_id_steps))
+                       print("sample: {} / {}".format(idx, (camera_param_steps ** 5) * x_steps * y_steps * 2))
+
 
     # Save training samples
     save_path = os.path.join(model_path, 'mujoco_latents')
