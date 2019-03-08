@@ -45,7 +45,7 @@ def sample_visualize(image, affordance_arr, model_path, id):
 
     image = np.transpose(image, (1, 2, 0))
 
-    sample_path = os.path.join(model_path, 'mujoco_samples_2')
+    sample_path = os.path.join(model_path, 'mujoco_debug')
     if not os.path.exists(sample_path):
         os.makedirs(sample_path)
 
@@ -88,16 +88,15 @@ if __name__  == '__main__':
     model = RosPerceptionVAE(os.path.join(VAED_MODELS_PATH, args.g_name), args.g_latent)
 
     if args.debug:
-        model_path = os.path.join(POLICY_MODELS_PATH, 'debug', args.g_name)
         x_steps = 2
         y_steps = 2
         camera_param_steps = 2
     else:
-        model_path = os.path.join(VAED_MODELS_PATH, args.g_name)
         x_steps = 10
         y_steps = 10
         camera_param_steps = 5
 
+    save_path = os.path.join(VAED_MODELS_PATH, args.g_name)
     planner = SimulationInterface(arm_name='lumi_arm')
     planner.reset(2)
 
@@ -166,7 +165,7 @@ if __name__  == '__main__':
 
                 if args.debug:
                     affordance, sample = model.reconstruct(image)
-                    sample_visualize(sample, affordance, model_path, idx)
+                    sample_visualize(sample, affordance, save_path, idx)
                 idx += 1
 
                 # Remove selected objects from the table
@@ -256,7 +255,7 @@ if __name__  == '__main__':
 
                         if args.debug:
                             affordance, sample = model.reconstruct(image)
-                            sample_visualize(sample, affordance, model_path, idx)
+                            sample_visualize(sample, affordance, save_path, idx)
                         idx += 1
                         planner.change_object_position(10, 12 + cup_id2, 0.0, 'cup{}'.format(cup_id2), duration=0)
 
@@ -298,14 +297,14 @@ if __name__  == '__main__':
                        # Visualize affordance results
                        if args.debug:
                            affordance, sample = model.reconstruct(image)
-                           sample_visualize(sample, affordance, model_path, idx)
+                           sample_visualize(sample, affordance, save_path, idx)
 
                        idx += 1
                        print("sample: {} / {}".format(idx, (camera_param_steps ** 5) * x_steps * y_steps * 2))
 
 
     # Save training samples
-    save_path = os.path.join(model_path, 'mujoco_latents')
+    save_path = os.path.join(save_path, 'mujoco_latents')
 
     if not os.path.exists(save_path):
         os.makedirs(save_path)

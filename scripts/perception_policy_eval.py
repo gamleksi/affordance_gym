@@ -60,26 +60,35 @@ def main(args):
     sim.change_camere_params(LOOK_AT, DISTANCE, AZIMUTH, ELEVATION)
     env = TrajectoryEnv(action_vae, sim, args.num_actions, num_joints=args.num_joints, trajectory_duration=args.duration)
 
+    # Reset time
+
+    if args.forward_kinematics:
+        reset_duration = 1.5
+    else:
+        reset_duration = 2.5
+
     losses = []
     for idx in range(100):
-        # cup_name = 'cup{}'.format(np.random.randint(1, 10))
+        cup_name = 'cup{}'.format(np.random.randint(1, 10))
         x = np.random.uniform(CUP_X_LIM[0], CUP_X_LIM[1])
         y = np.random.uniform(CUP_Y_LIM[0], CUP_Y_LIM[1])
 
+        lookat = np.array(LOOK_AT)
+        camera_distance = DISTANCE
+        azimuth = AZIMUTH
+        elevation = ELEVATION
+
         if (args.randomize_all):
 
-            lookat = np.array(LOOK_AT)
             lookat[0] += np.random.uniform(-LOOK_AT_EPSILON, LOOK_AT_EPSILON)
             lookat[1] += np.random.uniform(-LOOK_AT_EPSILON, LOOK_AT_EPSILON)
 
-            camera_distance = DISTANCE + np.random.uniform(-DISTANCE_EPSILON, DISTANCE_EPSILON)
-            azimuth = AZIMUTH + np.random.uniform(-AZIMUTH_EPSILON, AZIMUTH_EPSILON)
-            elevation = ELEVATION + np.random.uniform(-ELEVATION_EPSILON, ELEVATION_EPSILON)
+            camera_distance += np.random.uniform(-DISTANCE_EPSILON, DISTANCE_EPSILON)
+            azimuth += np.random.uniform(-AZIMUTH_EPSILON, AZIMUTH_EPSILON)
+            elevation += np.random.uniform(-ELEVATION_EPSILON, ELEVATION_EPSILON)
 
-            sim.change_camere_params(lookat, camera_distance, azimuth, elevation)
-            cup_name = 'cup{}'.format(np.random.random_integers(1, 10))
-
-        sim.reset_table(x, y, 0, cup_name, duration=1.5)
+        sim.change_camere_params(lookat, camera_distance, azimuth, elevation)
+        sim.reset_table(x, y, 0, cup_name, duration=reset_duration)
 
         image_arr = sim.capture_image('/lumi_mujoco/rgb')
         image = Image.fromarray(image_arr)

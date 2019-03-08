@@ -22,8 +22,8 @@ def parse_traj_arguments(parser):
 
     parser.add_argument('--vae-name', default='model_v2', type=str, help='')
     parser.add_argument('--latent-dim', default=5, type=int, help='') # VAE model determines
-    parser.add_argument('--num_joints', default=7, type=int, help='')
-    parser.add_argument('--num_actions', default=24, type=int, help='Smoothed trajectory') # VAE model determines
+    parser.add_argument('--num-joints', default=7, type=int, help='')
+    parser.add_argument('--num-actions', default=24, type=int, help='Smoothed trajectory') # VAE model determines
     parser.add_argument('--model-index', default=11, type=int)
 
 
@@ -34,7 +34,7 @@ def parse_vaed_arguments(parser):
 
 
 def parse_moveit_arguments(parser):
-    parser.add_argument('--duration', default=10, type=float, help='Duration of a generated trajectory in MuJoCo or Real HW')
+    parser.add_argument('--duration', default=0.5, type=float, help='Duration of a generated trajectory in MuJoCo or Real HW')
 
 
 def parse_kinect_arguments(parser):
@@ -53,6 +53,8 @@ def parse_kinect_arguments(parser):
 def parse_policy_arguments(parser):
     parser.add_argument('--policy-name', default='model_v1', type=str, help='')
     parser.add_argument('--num-params', default=128, type=int)
+    parser.add_argument('--fixed-camera', dest='fixed_camera', action='store_true')
+    parser.set_defaults(fixed_camera=False)
 
 
 def parse_policy_train_arguments(parser):
@@ -61,8 +63,6 @@ def parse_policy_train_arguments(parser):
     parser.add_argument('--batch-size', default=124, type=int)
     parser.add_argument('--lr', default=1.e-3, type=float)
     parser.add_argument('--num-processes', default=16, type=int)
-    parser.add_argument('--fixed-camera', dest='fixed_camera', action='store_true')
-    parser.set_defaults(fixed_camera=False)
 
 
 def sample_visualize(image, affordance_arr, sample_path, id):
