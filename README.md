@@ -22,7 +22,6 @@ Figure 1 shows the structure of the model.
 ## Setup
 
 Ros Kinetic, MoveIt!, and MuJoco (2.0) should be installed. 
-Install required depedencies To install ```pip install -r requirements.txt```.
 [Colcon](https://colcon.readthedocs.io/en/released/) was used to build a workspace.
 
 Prerequisites:
@@ -33,23 +32,35 @@ sudo apt install ros-kinetic-libfranka ros-kinetic-franka-ros
 ```
 
 The work environemnt depends also on the 
-[Intelligent Robotics research group's](http://irobotics.aalto.fi) MuJoCo control and environment 
 
 Workspace creation:
 ```sh
 mkdir -p ~/ros/src
 cd ~/ros/src
-git clone git@github.com:gamleksi/affordance_gym.git
-git clone git@github.com:gamleksi/mujoco_ros_control.git
-git clone git@github.com:gamleksi/lumi_testbed.git
+git --recursive clone git@github.com:gamleksi/affordance_env.git
 cd ~/ros
 colcon build
 ```
 
-## RUN
+### Lumi Testbed
 
+The set of core ROS packages for lumi robot. Contains URDF description, moveit configuration, mujoco configuration. Built by [Intelligent Robotics group](http://irobotics.aalto.fi).
 
-###  Training Flow of the System
+### Mujoco Ros Control
+
+Interface for the MuJoCo simulator. Built by [Intelligent Robotics group](http://irobotics.aalto.fi).
+
+### Lumi Pose Estimation
+
+This is required in kinect_simulation.launch, as it computes the camera pose of Kinect with a Aruco marker. Built by [Intelligent Robotics group](http://irobotics.aalto.fi).
+
+###  Affordance Gym
+
+Generates training data for TrajectoryVAE, and combines VAED and TrajectoryVAE together to perform desired trajectories based on an observation.
+
+## Run 
+
+### Training Flow of the System
 
 1) Generate a domain randomized dataset for affordance detection, train a VAED model, and update ```VAED_MODELS_PATH``` in src/env_setup/env_setup.py to match to the model's parent folder path.
 2) Generate trajectory training data run ```python scripts/generate_perception_data.py```, train a TrajectoryVAE model, and update TRAJ_MODELS_PATH (in src/env_setup/env_setup.py) to match to the model's parent folder path.
@@ -60,6 +71,8 @@ colcon build
 More info about each phase run ``` python scripts/file_name.py -h ```.
 
 ### Scripts and Roslaunch
+
+The table shows which launch file is required to be running with different scripts.
 
 |Script|Simulation|Note|
 |---|---|---|
