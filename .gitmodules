@@ -1,6 +1,6 @@
 [submodule "src/TrajectoryVAE"]
-	path = src/TrajectoryVAE
+	path = affordance_gym/src/TrajectoryVAE
 	url = git@github.com:gamleksi/TrajectoryVAE.git
 [submodule "src/AffordanceVAED"]
-	path = src/AffordanceVAED
+	path = affordance_gym/src/AffordanceVAED
 	url = git@github.com:gamleksi/AffordanceVAED.git
