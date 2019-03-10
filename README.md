@@ -19,6 +19,33 @@ Figure 1 shows the structure of the model.
 * [TrajectoryVAE](https://github.com/gamleksi/TrajectoryVAE) represents trajectories in a low-dimensional latent space, and generates a trajectory based on a given latent vector.
 * [affordance_gym](https://github.com/gamleksi/affordance_gym) generates training data for TrajectoryVAE, and combines VAED and TrajectoryVAE together to perform desired trajectories based on an observation.
 
+## Setup
+
+Ros Kinetic, MoveIt!, and MuJoco (2.0) should be installed. 
+Install required depedencies To install ```pip install -r requirements.txt```.
+[Colcon](https://colcon.readthedocs.io/en/released/) was used to build a workspace.
+
+Prerequisites:
+```sh
+pip install -r requirements.txt
+sudo apt install ros-kinetic-libfranka ros-kinetic-franka-ros
+... TODO
+```
+
+The work environemnt depends also on the 
+[Intelligent Robotics research group's](http://irobotics.aalto.fi) MuJoCo control and environment 
+
+Workspace creation:
+```sh
+mkdir -p ~/ros/src
+cd ~/ros/src
+git clone git@github.com:gamleksi/affordance_gym.git
+git clone git@github.com:gamleksi/mujoco_ros_control.git
+git clone git@github.com:gamleksi/lumi_testbed.git
+cd ~/ros
+colcon build
+```
+
 ## RUN
 
 
@@ -30,25 +57,16 @@ Figure 1 shows the structure of the model.
 4) To train a policy model run ```python scripts/perception_policy_train.py```, and, to evaluate the policy model's performance in MuJoCo run ``` python scripts/perception_policy_train```.py.
 5) Update ```KINECT_EXPERIMENTS_PATH``` (in src/env_setup/env_setup.py) and run ```python scripts/kinect_env.py``` to experiment the learned model with a real camera and with or without a real robot.
 
-### Run
+More info about each phase run ``` python scripts/file_name.py -h ```.
+
+### Scripts and Roslaunch
 
 |Script|Simulation|Note|
 |---|---|---|
-|generate_perception_data.py|roslaunch lumi_mujoco table_simulation.launch|Generate multiple dataset with different cup_id|
-|generate_trajectories.py|roslaunch lumi_mujoco table_simulation.launch|RTT* produced most deterministic trajectories|
-|kinect_debug.py|-|To find good camera position.|
-|kinect_env.py|roslaunch lumi_mujoco kinect_simulation.launch (without a real robot arm)||
-|kinect_test.py|roslaunch lumi_mujoco kinect_simulation.launch||
-|perception_policy_eval.py|roslaunch lumi_mujoco table_simulation.launch||
-|perception_policy_train.py|-||
-
-More info about each phase run ``` python scripts/file_name.py -h ```.
-
-## Setup
-
-Install required depedencies To install ```pip install -r requirements.txt```.
-
-## Run
-
-1) Generate training data with [affordance_gym](https://github.com/gamleksi/affordance_gym) (scripts/generate_trajectories.py).
-3) Run ```python main.py -h``` to see how to include the generated training data and explore rest of the running options.
+|generate_perception_data.py|roslaunch lumi_mujoco table_simulation.launch|
+|generate_trajectories.py|roslaunch lumi_mujoco table_simulation.launch|
+|kinect_debug.py|-|
+|kinect_env.py|roslaunch lumi_mujoco kinect_simulation.launch (without a real robot arm)|
+|kinect_test.py|roslaunch lumi_mujoco kinect_simulation.launch|
+|perception_policy_eval.py|roslaunch lumi_mujoco table_simulation.launch|
+|perception_policy_train.py|-|
