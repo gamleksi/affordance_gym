@@ -37,7 +37,7 @@ Workspace creation:
 ```sh
 mkdir -p ~/ros/src
 cd ~/ros/src
-git --recursive clone git@github.com:gamleksi/affordance_env.git
+git --recursive clone git@github.com:gamleksi/affordance_gym.git
 cd ~/ros
 colcon build
 ```
@@ -52,11 +52,7 @@ Interface for the MuJoCo simulator. Built by [Intelligent Robotics group](http:/
 
 ### Lumi Pose Estimation
 
-This is required in kinect_simulation.launch, as it computes the camera pose of Kinect with a Aruco marker. Built by [Intelligent Robotics group](http://irobotics.aalto.fi).
-
-###  Affordance Gym
-
-Generates training data for TrajectoryVAE, and combines VAED and TrajectoryVAE together to perform desired trajectories based on an observation.
+This is required in kinect_simulation.launch, as it computes the camera pose of Kinect with a Aruco marker.
 
 ## Run 
 
@@ -74,8 +70,8 @@ More info about each phase run ``` python scripts/file_name.py -h ```.
 
 The table shows which launch file is required to be running with different scripts.
 
-|Script|Simulation|Note|
-|---|---|---|
+|Script|Simulation|
+|---|---|
 |generate_perception_data.py|roslaunch lumi_mujoco table_simulation.launch|
 |generate_trajectories.py|roslaunch lumi_mujoco table_simulation.launch|
 |kinect_debug.py|-|
