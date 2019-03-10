@@ -19,13 +19,28 @@ Figure 1 shows the structure of the model.
 * [TrajectoryVAE](https://github.com/gamleksi/TrajectoryVAE) represents trajectories in a low-dimensional latent space, and generates a trajectory based on a given latent vector.
 * [affordance_gym](https://github.com/gamleksi/affordance_gym) generates training data for TrajectoryVAE, and combines VAED and TrajectoryVAE together to perform desired trajectories based on an observation.
 
-## Training Flow of the System
+## RUN
+
+
+###  Training Flow of the System
 
 1) Generate a domain randomized dataset for affordance detection, train a VAED model, and update ```VAED_MODELS_PATH``` in src/env_setup/env_setup.py to match to the model's parent folder path.
 2) Generate trajectory training data run ```python scripts/generate_perception_data.py```, train a TrajectoryVAE model, and update TRAJ_MODELS_PATH (in src/env_setup/env_setup.py) to match to the model's parent folder path.
 3) Update ```POLICY_MODELS_PATH``` (in src/env_setup/env_setup.py) to match to the model's parent folder path and run ```python scripts/generate_perception_data.py``` to generate training policy data.
 4) To train a policy model run ```python scripts/perception_policy_train.py```, and, to evaluate the policy model's performance in MuJoCo run ``` python scripts/perception_policy_train```.py.
 5) Update ```KINECT_EXPERIMENTS_PATH``` (in src/env_setup/env_setup.py) and run ```python scripts/kinect_env.py``` to experiment the learned model with a real camera and with or without a real robot.
+
+### Run
+
+|Script|Simulation|Note|
+|---|---|---|
+|generate_perception_data.py|roslaunch lumi_mujoco table_simulation.launch|Generate multiple dataset with different cup_id|
+|generate_trajectories.py|roslaunch lumi_mujoco table_simulation.launch|RTT* produced most deterministic trajectories|
+|kinect_debug.py|-|To find good camera position.|
+|kinect_env.py|roslaunch lumi_mujoco kinect_simulation.launch (without a real robot arm)||
+|kinect_test.py|roslaunch lumi_mujoco kinect_simulation.launch||
+|perception_policy_eval.py|roslaunch lumi_mujoco table_simulation.launch||
+|perception_policy_train.py|-||
 
 More info about each phase run ``` python scripts/file_name.py -h ```.
 
