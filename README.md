@@ -42,13 +42,12 @@ cd ~/ros
 colcon build
 ```
 
-### Lumi Testbed
-
-The set of core ROS packages for lumi robot. Contains URDF description, moveit configuration, mujoco configuration. Built by [Intelligent Robotics group](http://irobotics.aalto.fi).
+The folder structure:
+* Lumi Testbed: The set of core ROS packages for lumi robot. Contains URDF description, moveit configuration, mujoco configuration. Built by [Intelligent Robotics group](http://irobotics.aalto.fi) members.
 
 ### Mujoco Ros Control
 
-Interface for the MuJoCo simulator. Built by [Intelligent Robotics group](http://irobotics.aalto.fi).
+Interface for the MuJoCo simulator. Built by [Intelligent Robotics group](http://irobotics.aalto.fi) members.
 
 ### Lumi Pose Estimation
 
@@ -77,5 +76,6 @@ The table shows which launch file is required to be running with each python fil
 |kinect_debug.py|-|
 |kinect_env.py|roslaunch lumi_mujoco kinect_simulation.launch (without a real robot arm)|
 |kinect_test.py|roslaunch lumi_mujoco kinect_simulation.launch|
+|mc_interface.py|(real robot launch file)|
 |perception_policy_eval.py|roslaunch lumi_mujoco table_simulation.launch|
 |perception_policy_train.py|-|
