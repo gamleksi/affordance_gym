@@ -7,9 +7,9 @@ We showed that our system performs its task successfully in zero-shot sim-to-rea
 Each part of our system was fully trained either with synthetic data or in a simulation.
 The system was invariant to, e.g., distractor objects and textures.
 
-The system layout:
+The system structure:
 
-![the VAED structure](images/trajvae.png?raw=true)
+![the structure](images/structure.png?raw=true)
 
 We have didvided our work into the following code blocks:
 
