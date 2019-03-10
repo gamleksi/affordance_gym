@@ -1,9 +1,3 @@
-[submodule "src/TrajectoryVAE"]
-	path = affordance_gym/src/TrajectoryVAE
-	url = git@github.com:gamleksi/TrajectoryVAE.git
-[submodule "src/AffordanceVAED"]
-	path = affordance_gym/src/AffordanceVAED
-	url = git@github.com:gamleksi/AffordanceVAED.git
 [submodule "lumi_testbed"]
 	path = lumi_testbed
 	url = git@github.com:gamleksi/lumi_testbed.git
