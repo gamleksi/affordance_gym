@@ -1,4 +1,4 @@
-# [Affordance Learning for End-to-End Visuomotor Robot Control](TODO)
+# Affordance Learning for End-to-End Visuomotor Robot Control
 
 In [Affordance Learning for End-to-End Visuomotor Robot Control](TODO), we introduced a modular deep neural network structure, 
 that detects a container on a table, and inserts a ball into it.
@@ -68,7 +68,7 @@ More info about each phase run ``` python scripts/file_name.py -h ```.
 
 ### Scripts and Roslaunch
 
-The table shows which launch file is required to be running with different scripts.
+The table shows which launch file is required to be running with each python file.
 
 |Script|Simulation|
 |---|---|
