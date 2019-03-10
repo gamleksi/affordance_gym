@@ -26,7 +26,7 @@ Ros Kinetic, MoveIt!, and MuJoco (2.0) should be installed.
 
 Prerequisites:
 ```sh
-pip install -r requirements.txt
+pip install -r affordance_gym/requirements.txt
 sudo apt install ros-kinetic-libfranka ros-kinetic-franka-ros
 ... TODO
 ```
@@ -48,7 +48,7 @@ The folder structure:
 * Lumi Pose Estimation: This is required in kinect_simulation.launch, as it computes the camera pose of Kinect with a Aruco marker.
 * Affordance Gym: Affordance Learning for End-to-End Visuomotor Robot Control
 
-## Run 
+## Run (in the affordance_gym folder)
 
 ### Training Flow of the System
 
