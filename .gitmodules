@@ -4,3 +4,12 @@
 [submodule "src/AffordanceVAED"]
 	path = affordance_gym/src/AffordanceVAED
 	url = git@github.com:gamleksi/AffordanceVAED.git
+[submodule "lumi_testbed"]
+	path = lumi_testbed
+	url = git@github.com:gamleksi/lumi_testbed.git
+[submodule "lumi_pose_estimation"]
+	path = lumi_pose_estimation
+	url = git@github.com:gamleksi/lumi_pose_estimation.git
+[submodule "mujoco_ros_control"]
+	path = mujoco_ros_control
+	url = git@github.com:gamleksi/mujoco_ros_control.git
