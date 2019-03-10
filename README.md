@@ -43,15 +43,10 @@ colcon build
 ```
 
 The folder structure:
-* Lumi Testbed: The set of core ROS packages for lumi robot. Contains URDF description, moveit configuration, mujoco configuration. Built by [Intelligent Robotics group](http://irobotics.aalto.fi) members.
+* Lumi Testbed by [Intelligent Robotics group](http://irobotics.aalto.fi): The set of core ROS packages for lumi robot. Contains URDF description, moveit configuration, mujoco configuration. Built  members.
+* Mujoco Ros Control by [Intelligent Robotics group](http://irobotics.aalto.fi): Interface for the MuJoCo simulator.
+* Lumi Pose Estimation: This is required in kinect_simulation.launch, as it computes the camera pose of Kinect with a Aruco marker.
 
-### Mujoco Ros Control
-
-Interface for the MuJoCo simulator. Built by [Intelligent Robotics group](http://irobotics.aalto.fi) members.
-
-### Lumi Pose Estimation
-
-This is required in kinect_simulation.launch, as it computes the camera pose of Kinect with a Aruco marker.
 
 ## Run 
 
