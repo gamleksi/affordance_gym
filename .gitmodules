@@ -7,3 +7,9 @@
 [submodule "mujoco_ros_control"]
 	path = mujoco_ros_control
 	url = git@github.com:gamleksi/mujoco_ros_control.git
+[submodule "affordance_gym/src/AffordanceVAED"]
+	path = affordance_gym/src/AffordanceVAED
+	url = git@github.com:gamleksi/AffordanceVAED.git
+[submodule "affordance_gym/src/TrajectoryVAE"]
+	path = affordance_gym/src/TrajectoryVAE
+	url = git@github.com:gamleksi/TrajectoryVAE.git
