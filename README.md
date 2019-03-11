@@ -27,8 +27,7 @@ Ros Kinetic, MoveIt!, and MuJoco (2.0) should be installed.
 Prerequisites:
 ```sh
 pip install -r affordance_gym/requirements.txt
-sudo apt install ros-kinetic-libfranka ros-kinetic-franka-ros
-... TODO
+sudo apt install ros-kinetic-moveit ros-kinetic-libfranka ros-kinetic-franka-ros
 ```
 
 The work environemnt depends also on the 
@@ -45,7 +44,7 @@ colcon build
 The folder structure:
 * Lumi Testbed by [Intelligent Robotics group](http://irobotics.aalto.fi): The set of core ROS packages for Lumi, our robot. Contains URDF description, moveit configuration, mujoco configuration.
 * Mujoco Ros Control by [Intelligent Robotics group](http://irobotics.aalto.fi): Interface for the MuJoCo simulator.
-* Lumi Pose Estimation: This is required in kinect_simulation.launch, as it computes the camera pose of Kinect with a Aruco marker.
+* Lumi Pose Estimation: computes the camera pose of Kinect with an aruco marker, which is required in kinect_simulation.launch.
 * Affordance Gym: Affordance Learning for End-to-End Visuomotor Robot Control
 
 ## Run (in the affordance_gym folder)
@@ -55,7 +54,7 @@ The folder structure:
 1) Generate a domain randomized dataset for affordance detection, train a VAED model, and update ```VAED_MODELS_PATH``` in src/env_setup/env_setup.py to match to the model's parent folder path.
 2) Generate trajectory training data run ```python scripts/generate_perception_data.py```, train a TrajectoryVAE model, and update TRAJ_MODELS_PATH (in src/env_setup/env_setup.py) to match to the model's parent folder path.
 3) Update ```POLICY_MODELS_PATH``` (in src/env_setup/env_setup.py) to match to the model's parent folder path and run ```python scripts/generate_perception_data.py``` to generate training policy data.
-4) To train a policy model run ```python scripts/perception_policy_train.py```, and, to evaluate the policy model's performance in MuJoCo run ``` python scripts/perception_policy_train```.py.
+4) To train a policy model run ```python scripts/perception_policy_train.py```, and to evaluate the policy model's performance in MuJoCo run ``` python scripts/perception_policy_train.py```.
 5) Update ```KINECT_EXPERIMENTS_PATH``` (in src/env_setup/env_setup.py) and run ```python scripts/kinect_env.py``` to experiment the learned model with a real camera and with or without a real robot.
 
 More info about each phase run ``` python scripts/file_name.py -h ```.
